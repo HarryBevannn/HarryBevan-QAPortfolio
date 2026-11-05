@@ -1,0 +1,569 @@
+---
+/**
+ * IgnitionButton: an original fighter-cockpit style engine start switch.
+ * A grey panel with etched legends and screw fasteners, a yellow/black hazard
+ * surround, a low-profile square push button whose etched START legend lights
+ * up once armed, and a slim hinged red guard over it.
+ *
+ * Behaviour lives in src/scripts/intro-controller.ts; animation in
+ * src/animations/ignition.ts. Hooks are data-* attributes.
+ */
+// Stacked layers between the guard's faces give it a little real thickness in 3D.
+const slices = Array.from({ length: 3 });
+const screws = [
+  { x: 16, y: 16, deg: 30 },
+  { x: 184, y: 16, deg: 75 },
+  { x: 16, y: 234, deg: 120 },
+  { x: 184, y: 234, deg: 10 },
+];
+---
+
+<div class="ignition" data-ignition>
+  <div class="ignition__unit">
+    <div class="ignition__console">
+      <svg class="ignition__plate" viewBox="0 0 200 250" aria-hidden="true" focusable="false">
+        <defs>
+          <linearGradient id="ig-plate" x1="0" y1="0" x2="0.35" y2="1">
+            <stop offset="0" stop-color="#4a5057"></stop>
+            <stop offset="0.5" stop-color="#363b41"></stop>
+            <stop offset="1" stop-color="#25292d"></stop>
+          </linearGradient>
+          <linearGradient id="ig-screw" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#d9dde2"></stop>
+            <stop offset="0.5" stop-color="#868c94"></stop>
+            <stop offset="1" stop-color="#3b3f45"></stop>
+          </linearGradient>
+          <pattern
+            id="ig-hazard"
+            width="12"
+            height="12"
+            patternUnits="userSpaceOnUse"
+            patternTransform="rotate(45)"
+          >
+            <rect width="12" height="12" fill="#111214"></rect>
+            <rect width="6" height="12" fill="#e2b000"></rect>
+          </pattern>
+        </defs>
+
+        <!-- Panel -->
+        <rect x="1" y="1" width="198" height="248" rx="12" fill="url(#ig-plate)"></rect>
+        <rect
+          x="1"
+          y="1"
+          width="198"
+          height="248"
+          rx="12"
+          fill="none"
+          stroke="#0b0c0e"
+          stroke-width="2"
+        ></rect>
+        <rect
+          x="5"
+          y="5"
+          width="190"
+          height="240"
+          rx="9"
+          fill="none"
+          stroke="#fff"
+          stroke-opacity="0.07"
+        ></rect>
+
+        {screws.map(({ x, y, deg }) => (
+          <g transform={`translate(${x} ${y}) rotate(${deg})`}>
+            <circle r="5.5" fill="#15171a" />
+            <circle r="4.4" fill="url(#ig-screw)" />
+            <line x1="-3" x2="3" stroke="#22252a" stroke-width="1.1" />
+            <line y1="-3" y2="3" stroke="#22252a" stroke-width="1.1" />
+          </g>
+        ))}
+
+        <!-- Etched legends: a dark copy offset up reads as a cut edge. -->
+        <g class="ignition__etch" text-anchor="middle">
+          <text x="100" y="39.2" class="ignition__etch-shadow ignition__legend">
+            ENGINE START
+          </text>
+          <text x="100" y="40" class="ignition__legend">
+            ENGINE START
+          </text>
+          <text x="100" y="220.2" class="ignition__etch-shadow ignition__legend-small">
+            LIFT GUARD · PUSH TO START
+          </text>
+          <text x="100" y="221" class="ignition__legend-small">
+            LIFT GUARD · PUSH TO START
+          </text>
+        </g>
+        <line x1="40" y1="50" x2="160" y2="50" stroke="#0b0c0e" stroke-opacity="0.7"></line>
+        <line x1="40" y1="51" x2="160" y2="51" stroke="#fff" stroke-opacity="0.1"></line>
+
+        <!-- Hazard surround and the recessed well the button sits in -->
+        <rect x="38" y="66" width="124" height="124" rx="8" fill="url(#ig-hazard)"></rect>
+        <rect
+          x="38"
+          y="66"
+          width="124"
+          height="124"
+          rx="8"
+          fill="none"
+          stroke="#000"
+          stroke-opacity="0.5"
+          stroke-width="1.5"
+        ></rect>
+        <rect x="47" y="75" width="106" height="106" rx="5" fill="#08090a"></rect>
+        <rect
+          x="47"
+          y="75"
+          width="106"
+          height="106"
+          rx="5"
+          fill="none"
+          stroke="#fff"
+          stroke-opacity="0.06"
+        ></rect>
+      </svg>
+
+      <button
+        type="button"
+        class="ignition__start"
+        id="start-button"
+        data-start-button
+        data-testid="start-button"
+        disabled
+        aria-describedby="ignition-hint"
+      >
+        <svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="ig-face" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2e3236"></stop>
+              <stop offset="1" stop-color="#131517"></stop>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="9" fill="#030304"></rect>
+          <rect x="4" y="4" width="92" height="92" rx="7" fill="url(#ig-face)"></rect>
+          <rect x="6" y="6" width="88" height="28" rx="6" fill="#fff" fill-opacity="0.06"></rect>
+          <rect
+            x="4"
+            y="4"
+            width="92"
+            height="92"
+            rx="7"
+            fill="none"
+            stroke="#fff"
+            stroke-opacity="0.1"
+          ></rect>
+          <g text-anchor="middle">
+            <text x="50" y="31.2" class="ignition__btn-shadow ignition__btn-small">
+              ENG
+            </text>
+            <text x="50" y="32" class="ignition__btn-small">
+              ENG
+            </text>
+            <text x="50" y="60.2" class="ignition__btn-shadow ignition__btn-legend">
+              START
+            </text>
+            <text x="50" y="61" class="ignition__btn-legend">
+              START
+            </text>
+          </g>
+          <rect x="34" y="72" width="32" height="4" rx="2" class="ignition__btn-lamp"></rect>
+        </svg>
+        <span class="sr-only">Start engine</span>
+      </button>
+      <span class="ignition__flash" data-start-flash aria-hidden="true"></span>
+
+      <button
+        type="button"
+        class="ignition__guard"
+        data-guard
+        data-testid="guard"
+        aria-expanded="false"
+        aria-controls="start-button"
+      >
+        <span class="ignition__lid" aria-hidden="true">
+          {slices.map(() => (
+            <span class="ignition__slice" />
+          ))}
+          <span class="ignition__face ignition__face--back">
+            <svg viewBox="0 0 100 100" focusable="false">
+              <rect x="1" y="1" width="98" height="98" rx="6" fill="#5c0200"></rect>
+              <rect
+                x="8"
+                y="8"
+                width="84"
+                height="84"
+                rx="4"
+                fill="none"
+                stroke="#000"
+                stroke-opacity="0.4"
+              ></rect>
+              <text x="50" y="53.2" class="ignition__guard-shadow ignition__guard-text">
+                ARMED
+              </text>
+              <text x="50" y="54" class="ignition__guard-text">
+                ARMED
+              </text>
+            </svg>
+          </span>
+          <span class="ignition__face ignition__face--front">
+            <svg viewBox="0 0 100 100" focusable="false">
+              <defs>
+                <linearGradient id="ig-guard" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#e5170c"></stop>
+                  <stop offset="0.55" stop-color="#b80400"></stop>
+                  <stop offset="1" stop-color="#7f0300"></stop>
+                </linearGradient>
+              </defs>
+              <rect x="1" y="1" width="98" height="98" rx="6" fill="url(#ig-guard)"></rect>
+              <rect
+                x="1"
+                y="1"
+                width="98"
+                height="98"
+                rx="6"
+                fill="none"
+                stroke="#000"
+                stroke-opacity="0.45"
+                stroke-width="1.5"
+              ></rect>
+              <!-- Pressed-in rim -->
+              <rect
+                x="8"
+                y="8"
+                width="78"
+                height="84"
+                rx="4"
+                fill="none"
+                stroke="#000"
+                stroke-opacity="0.3"
+              ></rect>
+              <rect
+                x="8"
+                y="9"
+                width="78"
+                height="84"
+                rx="4"
+                fill="none"
+                stroke="#fff"
+                stroke-opacity="0.14"
+              ></rect>
+              <g text-anchor="middle">
+                <text x="47" y="49.2" class="ignition__guard-shadow ignition__guard-text">
+                  LIFT
+                </text>
+                <text x="47" y="50" class="ignition__guard-text">
+                  LIFT
+                </text>
+                <text x="47" y="63.2" class="ignition__guard-shadow ignition__guard-small">
+                  TO ARM
+                </text>
+                <text x="47" y="64" class="ignition__guard-small">
+                  TO ARM
+                </text>
+              </g>
+              <!-- Finger tab on the free (right) edge -->
+              <rect
+                x="90"
+                y="36"
+                width="9"
+                height="28"
+                rx="2"
+                fill="#000"
+                fill-opacity="0.3"
+              ></rect>
+            </svg>
+          </span>
+        </span>
+        <span class="sr-only">Safety guard</span>
+      </button>
+      <span class="ignition__hinge" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <p class="ignition__hint" id="ignition-hint" data-hint>
+    Lift the guard to start
+  </p>
+</div>
+
+<style>
+  .ignition {
+    --w: clamp(168px, 36vmin, 228px);
+    display: grid;
+    justify-items: center;
+    gap: var(--space-5);
+  }
+
+  .ignition__unit {
+    position: relative;
+    width: var(--w);
+    aspect-ratio: 200 / 250;
+    perspective: 700px;
+    filter: drop-shadow(0 14px 24px rgb(0 0 0 / 70%));
+  }
+
+  .ignition__plate {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Etched lettering: light fill, with a dark copy offset up for the cut edge. */
+  .ignition__legend,
+  .ignition__legend-small,
+  .ignition__btn-small,
+  .ignition__btn-legend,
+  .ignition__guard-text,
+  .ignition__guard-small {
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .ignition__legend {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    fill: #d4d8dd;
+  }
+
+  .ignition__legend-small {
+    font-size: 6.4px;
+    letter-spacing: 0.14em;
+    fill: #aab0b7;
+  }
+
+  .ignition__etch-shadow,
+  .ignition__btn-shadow,
+  .ignition__guard-shadow {
+    fill: #000;
+    fill-opacity: 0.75;
+  }
+
+  /* Positions are percentages of the 200 × 250 panel. */
+  .ignition__start {
+    position: absolute;
+    left: 28%;
+    top: 33.6%;
+    width: 44%;
+    height: 35.2%;
+    padding: 0;
+    border: 0;
+    border-radius: 9%;
+    background: none;
+    cursor: pointer;
+  }
+
+  .ignition__start:disabled {
+    cursor: default;
+  }
+
+  .ignition__start svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ignition__start:focus-visible {
+    outline-offset: 5px;
+  }
+
+  .ignition__btn-small {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    fill: #6b7178;
+  }
+
+  .ignition__btn-legend {
+    font-size: 19px;
+    letter-spacing: 0.08em;
+    fill: #737980;
+    transition:
+      fill var(--duration-base),
+      filter var(--duration-base);
+  }
+
+  .ignition__btn-lamp {
+    fill: #2a2d31;
+    transition: fill var(--duration-base);
+  }
+
+  /* Armed: the legend and lamp backlight, and the button breathes red. */
+  :global(html:is([data-stage='armed'], [data-stage='starting'])) .ignition__btn-legend {
+    fill: #ff4d3d;
+    filter: drop-shadow(0 0 3px rgb(255 60 40 / 90%));
+  }
+
+  :global(html:is([data-stage='armed'], [data-stage='starting'])) .ignition__btn-small {
+    fill: #ffb3aa;
+  }
+
+  :global(html:is([data-stage='armed'], [data-stage='starting'])) .ignition__btn-lamp {
+    fill: #3ddc84;
+    filter: drop-shadow(0 0 3px #3ddc84);
+  }
+
+  :global(html[data-stage='armed']) .ignition__start {
+    animation: ignition-pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes ignition-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 12px 1px rgb(225 6 0 / 30%);
+    }
+    50% {
+      box-shadow: 0 0 30px 6px var(--color-red-glow);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html[data-stage='armed']) .ignition__start {
+      animation: none;
+      box-shadow: 0 0 24px 4px var(--color-red-glow);
+    }
+  }
+
+  .ignition__flash {
+    position: absolute;
+    left: 28%;
+    top: 33.6%;
+    width: 44%;
+    height: 35.2%;
+    border-radius: 9%;
+    background: radial-gradient(circle, #fff 0%, rgb(255 90 78 / 70%) 45%, transparent 75%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* The panel tilts back slightly so the guard's depth reads as 3D. */
+  .ignition__console {
+    position: absolute;
+    inset: 0;
+    transform: rotateX(12deg);
+    transform-style: preserve-3d;
+  }
+
+  /*
+   * Safety guard: hinged on its LEFT edge (transform-origin), so lifting it
+   * swings it up and out sideways (rotateY, in ignition.ts). It covers the
+   * hazard surround.
+   */
+  .ignition__guard {
+    --t: calc(var(--w) * 0.028); /* guard thickness: slim sheet, not a block */
+    position: absolute;
+    left: 19%;
+    top: 26.4%;
+    width: 62%;
+    height: 49.6%;
+    padding: 0;
+    border: 0;
+    border-radius: 6%;
+    background: none;
+    cursor: pointer;
+    transform-origin: 0% 50%;
+    transform-style: preserve-3d;
+    z-index: 2;
+  }
+
+  .ignition__guard:focus-visible {
+    outline-offset: 5px;
+  }
+
+  /* Inner lid: lets the guard "peek" open on hover without touching GSAP's transform. */
+  .ignition__lid {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0% 50%;
+    transform-style: preserve-3d;
+    transition: transform 0.35s var(--ease-out);
+  }
+
+  :global(html[data-stage='intro']) .ignition__guard:hover .ignition__lid {
+    transform: rotateY(-12deg);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html[data-stage='intro']) .ignition__guard:hover .ignition__lid {
+      transform: none;
+    }
+  }
+
+  .ignition__face,
+  .ignition__slice {
+    position: absolute;
+    inset: 0;
+    border-radius: 6%;
+  }
+
+  .ignition__face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .ignition__face svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .ignition__face--front {
+    transform: translateZ(var(--t));
+  }
+
+  .ignition__face--back {
+    transform: rotateY(180deg);
+  }
+
+  /* The edge: three layers through the guard's thickness. */
+  .ignition__slice {
+    background: linear-gradient(90deg, #6e0300, #a80400 50%, #5c0200);
+    transform: translateZ(calc(var(--t) * var(--i) / 4));
+  }
+
+  .ignition__slice:nth-child(1) {
+    --i: 1;
+    box-shadow: 0 8px 14px rgb(0 0 0 / 55%);
+  }
+  .ignition__slice:nth-child(2) {
+    --i: 2;
+  }
+  .ignition__slice:nth-child(3) {
+    --i: 3;
+  }
+
+  .ignition__guard-text {
+    font-size: 15px;
+    letter-spacing: 0.2em;
+    fill: rgb(255 225 220 / 92%);
+  }
+
+  .ignition__guard-small {
+    font-size: 7px;
+    letter-spacing: 0.24em;
+    fill: rgb(255 215 210 / 80%);
+  }
+
+  .ignition__face--back .ignition__guard-text {
+    text-anchor: middle;
+    font-size: 12px;
+  }
+
+  /* Slim hinge pin along the guard's left edge. */
+  .ignition__hinge {
+    position: absolute;
+    left: calc(19% - 3px);
+    top: 31%;
+    width: 6px;
+    height: 40%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #3b3f45, #e6e9ec 45%, #8a9098 70%, #3b3f45);
+    box-shadow: 1px 0 3px rgb(0 0 0 / 60%);
+    transform: translateZ(calc(var(--w) * 0.028));
+    pointer-events: none;
+  }
+
+  .ignition__hint {
+    min-height: 1.6em;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-grey-200);
+    text-align: center;
+  }
+</style>

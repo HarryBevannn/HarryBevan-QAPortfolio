@@ -1,0 +1,264 @@
+---
+/**
+ * AiEvals: the AI evals scorecard in Telemetry. A small "Pit wall assistant"
+ * that answers questions about this portfolio was put through an eval suite
+ * (evals/); its recorded answers are scored by code and shown here
+ * (src/scripts/aiEvals.ts): a score per category and every question, with
+ * the assistant's answer and each check.
+ *
+ * Without JavaScript it falls back to a link to the raw JSON.
+ */
+interface Props {
+  resultsUrl: string;
+}
+
+const { resultsUrl } = Astro.props;
+---
+
+<div class="evals panel" data-reveal data-evals data-results-url={resultsUrl}>
+  <div class="evals__head">
+    <p class="evals__eyebrow mono">AI evals · scorecard</p>
+    <h3 class="evals__title">The pit wall assistant</h3>
+    <p class="evals__intro">
+      A small AI assistant that answers questions about this portfolio, using only the text on this
+      page. It was asked questions it should answer, questions it can’t answer, requests for
+      personal data, prompt injections and off-topic requests. Its answers were recorded once and
+      are scored by code, and every CI run re-scores them, so this scorecard always matches the
+      suite. No model runs when you load this page.
+    </p>
+    <p class="evals__meta mono" data-evals-meta>
+      A recorded eval run, scored by the suite.
+    </p>
+  </div>
+
+  <div class="evals__board js-only" data-evals-board hidden>
+    <p class="evals__overall">
+      <span class="evals__overall-value mono" data-evals-overall>
+        –
+      </span>
+      <span class="evals__overall-label">of eval questions passed</span>
+    </p>
+    <ul class="evals__scores" data-evals-scores></ul>
+    <details class="evals__all">
+      <summary data-testid="evals-show-cases">
+        Every question and answer (<span data-evals-count>0</span>)
+      </summary>
+      <div class="evals__cases" data-evals-cases></div>
+    </details>
+  </div>
+
+  <p class="evals__links">
+    <a href={resultsUrl} data-testid="evals-json">
+      Raw scorecard (JSON)
+    </a>
+  </p>
+</div>
+
+<script>
+  import { initAiEvals } from '../scripts/aiEvals';
+  const root = document.querySelector<HTMLElement>('[data-evals]');
+  if (root) initAiEvals(root);
+</script>
+
+<style>
+  .evals {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    background: rgb(13 17 22 / 92%);
+  }
+
+  :global(html:not(.js)) .js-only {
+    display: none;
+  }
+
+  .evals__head {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .evals__eyebrow,
+  .evals__meta {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  .evals__eyebrow {
+    color: var(--color-accent);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+  }
+
+  .evals__title {
+    font-size: var(--text-xl);
+  }
+
+  .evals__intro {
+    color: var(--color-text-muted);
+  }
+
+  .evals__board {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .evals__board[hidden] {
+    display: none;
+  }
+
+  .evals__overall {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+
+  .evals__overall-value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-white);
+  }
+
+  .evals__overall-label {
+    color: var(--color-text-muted);
+  }
+
+  .evals__scores {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .evals__scores :global(li) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-1) var(--space-3);
+    align-items: center;
+  }
+
+  .evals__scores :global(.evals__score) {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-white);
+  }
+
+  .evals__scores :global(.evals__bar) {
+    grid-column: 1 / -1;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: rgb(255 255 255 / 8%);
+  }
+
+  .evals__scores :global(.evals__bar span) {
+    display: block;
+    height: 100%;
+    background: var(--color-green);
+    transform-origin: left;
+  }
+
+  .evals__scores :global(.is-short .evals__bar span) {
+    background: var(--color-amber);
+  }
+
+  .evals__all > summary {
+    justify-self: start;
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .evals__all[open] > summary {
+    margin-bottom: var(--space-3);
+  }
+
+  .evals__cases {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .evals__cases :global(details) {
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-sm);
+    background: rgb(5 7 9 / 70%);
+  }
+
+  .evals__cases :global(summary) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    cursor: pointer;
+    font-size: var(--text-sm);
+  }
+
+  .evals__cases :global(.evals__icon) {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-green);
+  }
+
+  .evals__cases :global([data-status='failed'] .evals__icon) {
+    color: var(--color-red-bright);
+  }
+
+  .evals__cases :global([data-status='error'] .evals__icon) {
+    color: var(--color-amber);
+  }
+
+  .evals__cases :global(.evals__category) {
+    grid-column: 2;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .evals__cases :global(.evals__detail) {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0 var(--space-4) var(--space-4);
+    font-size: var(--text-sm);
+  }
+
+  .evals__cases :global(.evals__label) {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-grey-200);
+  }
+
+  .evals__cases :global(.evals__answer) {
+    padding: var(--space-3);
+    border-left: 3px solid var(--color-accent);
+    background: rgb(255 255 255 / 4%);
+    white-space: pre-wrap;
+  }
+
+  .evals__cases :global(.evals__checks) {
+    display: grid;
+    gap: var(--space-1);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .evals__cases :global(.evals__checks .is-fail) {
+    color: var(--color-red-bright);
+  }
+
+  .evals__links {
+    font-size: var(--text-sm);
+  }
+
+  .evals__links a {
+    color: var(--color-accent);
+  }
+</style>

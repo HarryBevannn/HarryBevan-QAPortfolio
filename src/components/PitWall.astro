@@ -1,0 +1,213 @@
+---
+/**
+ * PitWall: the desktop dash panel pinned beside the windscreen. A live
+ * telemetry strip on top (sector, speed from scroll velocity, lap %), the
+ * mini-map of the circuit, and a sector nav that jumps to each section.
+ * Mobile uses the pinned MiniMap bar instead, so this is desktop only.
+ *
+ * Hooks for src/animations/lap.ts:
+ *   [data-hud-sector] [data-hud-speed] [data-hud-progress] [data-hud-bar]
+ *   [data-sector-link=id] gets aria-current="location" when active
+ */
+import MiniMap from './MiniMap.astro';
+import { lap } from '../data/lap';
+---
+
+<div class="pitwall panel" data-pitwall>
+  <div class="pitwall__hud" aria-hidden="true">
+    <div class="pitwall__live">
+      <span class="pitwall__dot"></span>Live
+    </div>
+    <div class="pitwall__reading">
+      <span class="pitwall__label">Sector</span>
+      <span class="pitwall__value" data-hud-sector>
+        {lap[0]?.sector}
+      </span>
+    </div>
+    <div class="pitwall__reading">
+      <span class="pitwall__label">Speed</span>
+      <span class="pitwall__value mono">
+        <span data-hud-speed>0</span> mph
+      </span>
+    </div>
+    <div class="pitwall__reading">
+      <span class="pitwall__label">Lap</span>
+      <span class="pitwall__value mono">
+        <span data-hud-progress>0</span>%
+      </span>
+    </div>
+  </div>
+  <div class="pitwall__bar" aria-hidden="true">
+    <span data-hud-bar></span>
+  </div>
+
+  <MiniMap variant="dash" />
+
+  <nav class="pitwall__nav" aria-label="Sectors">
+    <ol>
+      {lap.map((s, i) => (
+        <li>
+          <a href={`#${s.id}`} data-sector-link={s.id} data-testid={`sector-link-${s.id}`}>
+            <span class="mono">{String(i + 1).padStart(2, '0')}</span>
+            {s.hero ? 'Start' : s.title}
+          </a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+</div>
+
+<style>
+  .pitwall {
+    display: none;
+    width: 100%;
+    padding: var(--space-3);
+    overflow: hidden;
+    background: rgb(14 16 20 / 82%);
+    backdrop-filter: blur(6px);
+  }
+
+  .pitwall__hud {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: var(--space-4);
+    align-items: end;
+    padding: var(--space-1) var(--space-2) var(--space-3);
+  }
+
+  .pitwall__live {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    align-self: center;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-red-bright);
+  }
+
+  .pitwall__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-red);
+    box-shadow: 0 0 10px var(--color-red);
+    animation: live-blink 1.4s ease-in-out infinite;
+  }
+
+  @keyframes live-blink {
+    50% {
+      opacity: 0.25;
+    }
+  }
+
+  .pitwall__reading {
+    display: grid;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .pitwall__label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .pitwall__value {
+    overflow: hidden;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pitwall__bar {
+    height: 3px;
+    margin: 0 var(--space-2) var(--space-3);
+    border-radius: 2px;
+    background: rgb(255 255 255 / 8%);
+    overflow: hidden;
+  }
+
+  .pitwall__bar span {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--color-red), var(--color-accent));
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  :global(html:not(.js)) .pitwall__hud,
+  :global(html:not(.js)) .pitwall__bar {
+    display: none;
+  }
+
+  .pitwall__nav {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .pitwall {
+      display: block;
+      padding: var(--space-4);
+    }
+
+    .pitwall__nav {
+      display: block;
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .pitwall__nav ol {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-1) var(--space-2);
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .pitwall__nav a {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-height: 2rem;
+      padding: 0 var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-round);
+      color: var(--color-grey-200);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      text-decoration: none;
+      transition:
+        border-color var(--duration-fast),
+        background-color var(--duration-fast);
+    }
+
+    .pitwall__nav a:hover {
+      border-color: var(--color-border-strong);
+      color: var(--color-white);
+    }
+
+    .pitwall__nav a .mono {
+      color: var(--color-text-muted);
+    }
+
+    .pitwall__nav a[aria-current='location'] {
+      border-color: var(--color-red);
+      background: rgb(225 6 0 / 18%);
+      color: var(--color-white);
+    }
+
+    .pitwall__nav a[aria-current='location'] .mono {
+      color: var(--color-red-bright);
+    }
+  }
+</style>

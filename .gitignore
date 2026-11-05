@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.astro/
+
+# environment / secrets (never commit these)
+.env
+.env.*
+!.env.example
+
+# test output
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# logs & OS
+npm-debug.log*
+*.log
+.DS_Store
+Thumbs.db

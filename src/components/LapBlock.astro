@@ -1,0 +1,544 @@
+---
+/**
+ * LapBlock: renders one content block from src/data/lap.ts.
+ * Plain semantic HTML first; JS only adds polish (reveals, lap timer) via
+ * src/animations/lap.ts. [data-reveal] items slide in on scroll.
+ */
+import type { Block } from '../data/lap';
+import TestRun from './TestRun.astro';
+import AiEvals from './AiEvals.astro';
+import TestDesign from './TestDesign.astro';
+
+interface Props {
+  block: Block;
+}
+
+const { block } = Astro.props;
+
+/** "Email me" → "email-me": stable, readable test ids. */
+const slug = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+const icons = {
+  mail: 'M3 6.5h18v11H3zM3.5 7l8.5 6.5L20.5 7',
+  profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5',
+  code: 'M8.5 7 3.5 12l5 5M15.5 7l5 5-5 5M13.5 5l-3 14',
+} as const;
+---
+
+{block.type === 'text' && (
+  <p class="text" data-reveal>
+    {block.body}
+  </p>
+)}
+
+{block.type === 'chips' && (
+  <div class="chips" data-reveal>
+    {/* Not a heading: chips appear under the hero's h1 as well as under h2s. */}
+    <p class="eyebrow" aria-hidden="true">
+      {block.label}
+    </p>
+    <ul class="chip-list" aria-label={block.label}>
+      {block.items.map((item) => (
+        <li class="chip">{item}</li>
+      ))}
+    </ul>
+  </div>
+)}
+
+{block.type === 'cases' && (
+  <ul class="cases">
+    {block.items.map((c) => (
+      <li class="case panel" data-reveal>
+        <div class="case__head">
+          <div>
+            <p class="case__kicker mono">{c.kicker}</p>
+            <h3 class="case__title">{c.title}</h3>
+          </div>
+          {c.metric && (
+            <p class="case__metric">
+              <span class="case__metric-value mono">{c.metric.value}</span>
+              <span class="case__metric-label">{c.metric.label}</span>
+            </p>
+          )}
+        </div>
+        <dl class="case__body">
+          <div>
+            <dt>Problem</dt>
+            <dd>{c.problem}</dd>
+          </div>
+          <div>
+            <dt>Approach</dt>
+            <dd>{c.approach}</dd>
+          </div>
+          <div>
+            <dt>Outcome</dt>
+            <dd>{c.outcome}</dd>
+          </div>
+        </dl>
+        {c.steps && (
+          <div class="case__steps">
+            <p class="case__steps-label mono">How it runs</p>
+            <ol>
+              {c.steps.map((s) => (
+                <li>
+                  <strong>{s.label}</strong>
+                  <span>{s.detail}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        <ul class="chip-list" aria-label="Topics">
+          {c.tags.map((t) => (
+            <li class="chip">{t}</li>
+          ))}
+        </ul>
+        {c.links && (
+          <p class="case__links">
+            {c.links.map((l) => (
+              <a
+                class="case__link"
+                href={l.href}
+                data-testid={`case-link-${slug(l.label)}`}
+                {...(l.external ? { rel: 'noopener noreferrer', target: '_blank' } : {})}
+              >
+                {l.label}
+                {l.external && <span class="sr-only"> (opens in a new tab)</span>}
+                <span aria-hidden="true">{l.external ? ' ↗' : ' →'}</span>
+              </a>
+            ))}
+          </p>
+        )}
+      </li>
+    ))}
+  </ul>
+)}
+
+{block.type === 'test-run' && (
+  <TestRun
+    resultsUrl={block.resultsUrl}
+    ciUrl={block.ciUrl}
+    audits={block.audits}
+    auditNote={block.auditNote}
+  />
+)}
+
+{block.type === 'ai-evals' && <AiEvals resultsUrl={block.resultsUrl} />}
+
+{block.type === 'test-design' && <TestDesign />}
+
+{block.type === 'quotes' && (
+  <div class="quotes">
+    {block.items.map((q) => (
+      <figure class="quote panel" data-reveal>
+        <blockquote>
+          <p>{q.quote}</p>
+        </blockquote>
+        <figcaption>{q.attribution}</figcaption>
+      </figure>
+    ))}
+  </div>
+)}
+
+{block.type === 'finish' && (
+  <div class="finish panel" data-reveal data-finish>
+    <svg class="finish__flag" viewBox="0 0 60 44" aria-hidden="true">
+      <defs>
+        <pattern id="finish-chequer" width="12" height="12" patternUnits="userSpaceOnUse">
+          <rect width="12" height="12" fill="#f5f6f7" />
+          <rect width="6" height="6" fill="#0a0b0d" />
+          <rect x="6" y="6" width="6" height="6" fill="#0a0b0d" />
+        </pattern>
+      </defs>
+      <rect x="2" y="2" width="3" height="42" rx="1.5" fill="#9aa0a8" />
+      <path
+        class="finish__cloth"
+        d="M5 3 Q20 -1 34 4 T58 4 V30 Q44 34 32 28 T5 29 Z"
+        fill="url(#finish-chequer)"
+      />
+    </svg>
+    <div>
+      <p class="finish__title">{block.label}</p>
+      <p class="finish__time mono">
+        Lap time <span data-lap-time>--:--.---</span>
+      </p>
+    </div>
+  </div>
+)}
+
+{block.type === 'links' && (
+  <ul class="links">
+    {block.items.map((l, i) => (
+      <li>
+        <a
+          class:list={['link-tile panel', { 'link-tile--primary': i === 0 }]}
+          href={l.href}
+          data-reveal
+          data-testid={`contact-${slug(l.label)}`}
+          {...(l.external ? { rel: 'noopener noreferrer', target: '_blank' } : {})}
+        >
+          <span class="link-tile__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d={icons[l.icon]} />
+            </svg>
+          </span>
+          <span class="link-tile__text">
+            <span class="link-tile__label">{l.label}</span>
+            <span class="link-tile__detail mono">{l.detail}</span>
+          </span>
+          {l.external && <span class="sr-only"> (opens in a new tab)</span>}
+          <span class="link-tile__arrow" aria-hidden="true">
+            {l.external ? '↗' : '→'}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ul>
+)}
+
+<style>
+  .text,
+  .case__body dd {
+    color: var(--color-text-muted);
+  }
+
+  .chips {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  /* ── Case studies ─────────────────────────────────────── */
+  .cases {
+    display: grid;
+    gap: var(--space-4);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .case {
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    border-top: 3px solid var(--color-red);
+  }
+
+  .case__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .case__kicker {
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-red-bright);
+  }
+
+  .case__title {
+    margin-top: var(--space-1);
+    font-size: var(--text-xl);
+  }
+
+  .case__metric {
+    display: grid;
+    justify-items: end;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid rgb(126 224 255 / 35%);
+    border-radius: var(--radius-md);
+    background: rgb(126 224 255 / 8%);
+    text-align: right;
+  }
+
+  .case__metric-value {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--color-accent);
+  }
+
+  .case__metric-label {
+    font-size: var(--text-xs);
+    color: var(--color-grey-200);
+  }
+
+  .case__body {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  .case__body dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-white);
+  }
+
+  .case__body dd {
+    margin: var(--space-1) 0 0;
+  }
+
+  /* A flow's steps: numbered, joined by a line like a pipeline. */
+  .case__steps {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  .case__steps-label {
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-grey-200);
+  }
+
+  .case__steps ol {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+
+  .case__steps li {
+    position: relative;
+    display: grid;
+    gap: var(--space-1);
+    padding-left: 2.75rem;
+    counter-increment: step;
+  }
+
+  .case__steps li::before {
+    content: counter(step);
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+  }
+
+  .case__steps li:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 2.1rem;
+    bottom: calc(var(--space-3) * -1 + 0.2rem);
+    left: 0.95rem;
+    width: 1px;
+    background: var(--color-carbon-500);
+  }
+
+  .case__steps strong {
+    color: var(--color-white);
+  }
+
+  .case__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .case__link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 var(--space-4);
+    border: 1px solid rgb(126 224 255 / 35%);
+    border-radius: var(--radius-round);
+    color: var(--color-accent);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .case__link:hover {
+    border-color: var(--color-accent);
+    color: var(--color-white);
+  }
+
+  /* ── Quotes ───────────────────────────────────────────── */
+  .quotes {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .quote {
+    padding: var(--space-5);
+    border-left: 3px solid var(--color-red);
+  }
+
+  .quote blockquote {
+    margin: 0;
+    font-size: var(--text-lg);
+  }
+
+  .quote figcaption {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* ── Finish banner ────────────────────────────────────── */
+  .finish {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    overflow: hidden;
+  }
+
+  .finish::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 6px;
+    background: var(--kerb-straight);
+  }
+
+  .finish__flag {
+    flex: none;
+    width: 4.5rem;
+    overflow: visible;
+  }
+
+  .finish__cloth {
+    transform-box: fill-box;
+    transform-origin: left center;
+    animation: flag-wave 1.2s ease-in-out infinite alternate;
+  }
+
+  @keyframes flag-wave {
+    from {
+      transform: skewY(-4deg) scaleX(0.94);
+    }
+    to {
+      transform: skewY(5deg) scaleX(1.02);
+    }
+  }
+
+  .finish__title {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .finish__time {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .finish__time span {
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  /* ── Contact tiles ────────────────────────────────────── */
+  .links {
+    display: grid;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .link-tile {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    min-height: 4.5rem;
+    padding: var(--space-3) var(--space-5);
+    color: var(--color-white);
+    text-decoration: none;
+    transition:
+      border-color var(--duration-fast),
+      transform var(--duration-base) var(--ease-out),
+      box-shadow var(--duration-base);
+  }
+
+  .link-tile:hover {
+    border-color: var(--color-red);
+    color: var(--color-white);
+    transform: translateY(-2px);
+  }
+
+  .link-tile--primary {
+    border-color: rgb(225 6 0 / 60%);
+    background:
+      linear-gradient(135deg, rgb(225 6 0 / 28%), rgb(225 6 0 / 6%) 60%), var(--color-surface);
+    box-shadow: var(--shadow-glow-red);
+  }
+
+  .link-tile__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 7%);
+  }
+
+  .link-tile--primary .link-tile__icon {
+    background: var(--color-red);
+  }
+
+  .link-tile__icon svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .link-tile__text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .link-tile__label {
+    font-weight: 700;
+  }
+
+  .link-tile__detail {
+    overflow: hidden;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .link-tile__arrow {
+    font-size: var(--text-lg);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .link-tile:hover .link-tile__arrow {
+    transform: translateX(3px);
+  }
+
+  @media (min-width: 600px) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .links {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>

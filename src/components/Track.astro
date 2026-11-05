@@ -1,0 +1,421 @@
+---
+/**
+ * Track: the stylised circuit, drawn from src/data/track.ts, dressed like a
+ * real race track: run-off, red/white kerbs, white edge lines, tarmac, a pit
+ * lane with garages, grid boxes, start/finish chequers, the glowing racing
+ * line, a "driven" trail that fills as the car laps, corner labels, section
+ * markers and the car.
+ *
+ * Hooks for src/animations/lap.ts:
+ *   [data-track-path]  the path the car follows
+ *   [data-trail]       stroke-dashoffset 1 -> 0 as the lap progresses
+ *   [data-marker=id]   section markers, .is-active when that section is in view,
+ *                      .is-cleared once the car has passed it. Each is a link to
+ *                      its section, so the track doubles as a clickable map.
+ *   [data-split=id]    the sector split time shown by a marker once it's cleared
+ */
+import Car from './Car.astro';
+import { TRACK_PATH, TRACK_VIEWBOX, START, corners, pointOf } from '../data/track';
+import { lap } from '../data/lap';
+
+const cornerLabels = corners.map((c) => {
+  const [x, y] = pointOf(c.waypoint);
+  return { label: c.label, x: x + c.offset[0], y: y + c.offset[1] };
+});
+
+const markers = lap
+  .map((s, i) => ({
+    id: s.id,
+    n: String(i + 1).padStart(2, '0'),
+    title: s.title,
+    waypoint: s.waypoint,
+  }))
+  .filter((m) => m.waypoint !== 'start' && m.waypoint !== 'finish')
+  .map((m) => {
+    const [x, y] = pointOf(m.waypoint);
+    // Tooltips and splits sit on whichever side of the marker has more room.
+    const right = x < 620;
+    return { ...m, x, y, right };
+  });
+
+// Pit lane runs below the start/finish straight (which heads west at y≈612).
+const PIT_Y = 648;
+const pitLane = `M818 590 Q792 ${PIT_Y} 744 ${PIT_Y} L474 ${PIT_Y} Q432 ${PIT_Y} 418 594`;
+const garages = Array.from({ length: 9 }, (_, i) => 486 + i * 29);
+// Staggered grid slots behind the start line.
+const grid = [0, 1, 2, 3, 4, 5].map((i) => ({ x: START.x + 18 + i * 20, y: i % 2 ? 618 : 606 }));
+---
+
+<div class="track" data-track>
+  <div class="track__frame" data-track-zoom>
+    <svg
+      class="track__svg"
+      viewBox={`0 0 ${TRACK_VIEWBOX.width} ${TRACK_VIEWBOX.height}`}
+      role="group"
+      aria-labelledby="track-title"
+      data-track-svg
+    >
+      <title id="track-title">
+        Map of a stylised racing circuit. The car shows how far through the portfolio you’ve scrolled;
+        the numbered markers link to each section.
+      </title>
+      <defs>
+        <pattern id="tr-chequer" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#f5f6f7"></rect>
+          <rect width="3" height="3" fill="#0a0a0b"></rect>
+          <rect x="3" y="3" width="3" height="3" fill="#0a0a0b"></rect>
+        </pattern>
+        <radialGradient id="tr-car-glow">
+          <stop offset="0" stop-color="#ff3b30" stop-opacity="0.75"></stop>
+          <stop offset="1" stop-color="#ff3b30" stop-opacity="0"></stop>
+        </radialGradient>
+        <linearGradient id="tr-car-streak" x1="1" x2="0" y1="0" y2="0">
+          <stop offset="0" stop-color="#ff3b30" stop-opacity="0.7"></stop>
+          <stop offset="0.35" stop-color="#7ee0ff" stop-opacity="0.35"></stop>
+          <stop offset="1" stop-color="#7ee0ff" stop-opacity="0"></stop>
+        </linearGradient>
+        <radialGradient id="tr-infield" cx="0.5" cy="0.45" r="0.6">
+          <stop offset="0" stop-color="#3ddc84" stop-opacity="0.1"></stop>
+          <stop offset="1" stop-color="#3ddc84" stop-opacity="0.03"></stop>
+        </radialGradient>
+      </defs>
+
+      <!-- Infield and pit lane sit underneath the circuit. -->
+      <path class="track__infield" d={TRACK_PATH}></path>
+      <path class="track__pit" d={pitLane}></path>
+      <path class="track__pit-line" d={pitLane}></path>
+      <g class="track__garages">
+        {garages.map((x) => (
+          <rect x={x} y={PIT_Y + 9} width="24" height="11" rx="2" />
+        ))}
+      </g>
+
+      <!-- Circuit: run-off, kerbs, edge lines, tarmac. -->
+      <path class="track__runoff" d={TRACK_PATH}></path>
+      <path class="track__kerb-white" d={TRACK_PATH}></path>
+      <path class="track__kerb-red" d={TRACK_PATH}></path>
+      <path class="track__edge" d={TRACK_PATH}></path>
+      <path class="track__tarmac" d={TRACK_PATH}></path>
+
+      <g class="track__grid-boxes">
+        {grid.map((g) => (
+          <path d={`M${g.x} ${g.y - 4} h-7 v8 h7`} />
+        ))}
+      </g>
+
+      <path class="track__line-glow" d={TRACK_PATH}></path>
+      <path class="track__line" d={TRACK_PATH} data-track-path></path>
+      <path class="track__trail" d={TRACK_PATH} pathLength="1" data-trail></path>
+
+      <rect
+        x="-3"
+        y="-14"
+        width="6"
+        height="28"
+        fill="url(#tr-chequer)"
+        transform={`translate(${START.x} ${START.y}) rotate(${START.angle.toFixed(1)})`}
+      ></rect>
+      <text
+        x={START.x + 4}
+        y={START.y - 24}
+        class="track__label track__label--sf"
+        text-anchor="middle"
+      >
+        START / FINISH
+      </text>
+      <text x="610" y={PIT_Y + 34} class="track__label track__label--pit" text-anchor="middle">
+        PIT LANE
+      </text>
+
+      <g class="track__corners">
+        {cornerLabels.map((c) => (
+          <text x={c.x} y={c.y} class="track__label" text-anchor="middle">
+            {c.label}
+          </text>
+        ))}
+      </g>
+
+      <g class="track__markers">
+        {markers.map((m) => (
+          <>
+            <a
+              href={`#${m.id}`}
+              class="track__marker"
+              data-marker={m.id}
+              data-testid={`track-marker-${m.id}`}
+              aria-label={`Section ${m.n}: ${m.title}`}
+            >
+              <g transform={`translate(${m.x} ${m.y})`}>
+                <circle class="track__marker-halo" r="20" />
+                <circle class="track__marker-hit" r="26" />
+                <circle class="track__marker-dot" r="13" />
+                <text y="4.5" text-anchor="middle">
+                  {m.n}
+                </text>
+              </g>
+            </a>
+            {/* Outside the link, so the label never widens its tap target. */}
+            <g
+              class:list={['track__info', { 'track__info--left': !m.right }]}
+              transform={`translate(${m.x} ${m.y})`}
+              aria-hidden="true"
+            >
+              <text
+                class="track__tip"
+                x={m.right ? 30 : -30}
+                y="5"
+                text-anchor={m.right ? 'start' : 'end'}
+              >
+                {m.title}
+              </text>
+              <text class="track__split mono" y="-24" text-anchor="middle" data-split={m.id}></text>
+            </g>
+          </>
+        ))}
+      </g>
+
+      <Car />
+    </svg>
+  </div>
+</div>
+
+<style>
+  .track {
+    position: relative;
+    width: 100%;
+  }
+
+  .track__frame {
+    transform-origin: 50% 50%;
+  }
+
+  .track__svg {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  .track path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .track .track__infield {
+    fill: url(#tr-infield);
+  }
+
+  .track__pit {
+    stroke: #2a2d33;
+    stroke-width: 12;
+  }
+
+  .track__pit-line {
+    stroke: rgb(245 246 247 / 55%);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 6;
+  }
+
+  .track__garages rect {
+    fill: #2c3038;
+    stroke: rgb(245 246 247 / 35%);
+    stroke-width: 1;
+  }
+
+  .track__runoff {
+    stroke: #2b2f36;
+    stroke-width: 48;
+  }
+
+  .track__kerb-white {
+    stroke: #f5f6f7;
+    stroke-width: 32;
+  }
+
+  .track__kerb-red {
+    stroke: var(--color-red);
+    stroke-width: 32;
+    stroke-dasharray: 13 13;
+    stroke-linecap: butt;
+  }
+
+  .track__edge {
+    stroke: #f5f6f7;
+    stroke-width: 25;
+  }
+
+  .track__tarmac {
+    stroke: #26292f;
+    stroke-width: 22;
+  }
+
+  .track__grid-boxes path {
+    stroke: #f5f6f7;
+    stroke-width: 1.4;
+    stroke-linecap: square;
+    opacity: 0.85;
+  }
+
+  .track__line-glow {
+    stroke: var(--color-accent-glow);
+    stroke-width: 9;
+    opacity: 0.7;
+  }
+
+  .track__line {
+    stroke: var(--color-accent);
+    stroke-width: 2;
+    stroke-dasharray: 10 7;
+  }
+
+  /* The trail is fully drawn without JS; lap.ts rewinds it to the car. */
+  .track__trail {
+    stroke: var(--color-white);
+    stroke-width: 3.5;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+
+  :global(html.js) .track__trail {
+    stroke-dashoffset: 1;
+  }
+
+  .track__label {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    fill: var(--color-grey-200);
+    paint-order: stroke;
+    stroke: var(--color-bg);
+    stroke-width: 4px;
+  }
+
+  .track__label--sf {
+    fill: var(--color-white);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .track__label--pit {
+    font-size: 12px;
+    fill: var(--color-grey-300);
+  }
+
+  .track__marker {
+    cursor: pointer;
+    outline: none;
+  }
+
+  .track__marker-dot {
+    fill: var(--color-black);
+    stroke: var(--color-white);
+    stroke-width: 2;
+    transform-box: fill-box;
+    transform-origin: center;
+    transition:
+      stroke var(--duration-base),
+      fill var(--duration-base),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  /* A generous invisible target, so the markers are easy to tap. */
+  .track .track__marker-hit {
+    fill: transparent;
+  }
+
+  .track__marker-halo {
+    fill: none;
+    stroke: var(--color-red);
+    stroke-width: 2;
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .track__marker text {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    fill: var(--color-white);
+  }
+
+  /* Passed markers turn green, like a cleared sector on the timing screens. */
+  .track__marker:global(.is-cleared) .track__marker-dot {
+    fill: #0f3d26;
+    stroke: var(--color-green);
+  }
+
+  .track__marker:global(.is-active) .track__marker-dot {
+    fill: var(--color-red);
+    stroke: var(--color-white);
+  }
+
+  .track__marker:global(.is-active) .track__marker-halo {
+    opacity: 1;
+    animation: marker-ping 1.6s var(--ease-out) infinite;
+  }
+
+  .track__marker:global(.is-hover) .track__marker-dot,
+  .track__marker:hover .track__marker-dot,
+  .track__marker:focus-visible .track__marker-dot {
+    transform: scale(1.25);
+  }
+
+  .track__marker:focus-visible .track__marker-hit {
+    stroke: var(--color-focus);
+    stroke-width: 3;
+  }
+
+  /* Section name (shown on hover or focus) and split time, beside the marker. */
+  .track__info {
+    pointer-events: none;
+  }
+
+  .track .track__tip {
+    font-family: var(--font-sans);
+    font-size: 17px;
+    font-weight: 700;
+    fill: var(--color-white);
+    paint-order: stroke;
+    stroke: var(--color-bg);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity var(--duration-fast),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  .track__info--left .track__tip {
+    transform: translateX(6px);
+  }
+
+  .track__marker:is(:hover, :focus-visible, :global(.is-hover)) + .track__info .track__tip {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Sector split time above the marker, written by lap.ts as the car passes. */
+  .track .track__split {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    fill: var(--color-green);
+    paint-order: stroke;
+    stroke: var(--color-bg);
+    stroke-width: 4px;
+  }
+
+  @keyframes marker-ping {
+    from {
+      transform: scale(0.7);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+  }
+</style>

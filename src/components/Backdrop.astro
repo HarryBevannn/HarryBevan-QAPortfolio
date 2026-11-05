@@ -1,0 +1,151 @@
+---
+/**
+ * Backdrop: the animated page background behind the portfolio. Carbon-fibre twill,
+ * two slow drifting light pools (red and ice-blue), faint speed lines, rush
+ * streaks that show while scrolling fast (--lap-speed, set by lap.ts) and a
+ * vignette. Pure CSS with transform-only animation, so it stays smooth on
+ * phones. Static under prefers-reduced-motion.
+ */
+---
+
+<div class="backdrop" aria-hidden="true">
+  <div class="backdrop__carbon"></div>
+  <div class="backdrop__glow backdrop__glow--red"></div>
+  <div class="backdrop__glow backdrop__glow--ice"></div>
+  <div class="backdrop__speed"></div>
+  <div class="backdrop__rush"></div>
+  <div class="backdrop__vignette"></div>
+</div>
+
+<style>
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    background: radial-gradient(120% 80% at 50% 0%, #1c1f26 0%, var(--color-bg) 60%);
+    pointer-events: none;
+  }
+
+  .backdrop > * {
+    position: absolute;
+  }
+
+  /* Carbon-fibre twill (same weave as the start screen, lifted a little). */
+  .backdrop__carbon {
+    inset: 0;
+    opacity: 0.55;
+    background:
+      linear-gradient(27deg, #16181c 5px, transparent 5px) 0 5px,
+      linear-gradient(207deg, #16181c 5px, transparent 5px) 10px 0,
+      linear-gradient(27deg, #23262b 5px, transparent 5px) 0 10px,
+      linear-gradient(207deg, #23262b 5px, transparent 5px) 10px 5px,
+      linear-gradient(90deg, #1c1e22 10px, transparent 10px),
+      linear-gradient(
+        #1e2024 25%,
+        #1a1c20 25%,
+        #1a1c20 50%,
+        transparent 50%,
+        transparent 75%,
+        #25282d 75%,
+        #25282d
+      );
+    background-color: #15171b;
+    background-size: 20px 20px;
+    mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 55%) 100%);
+  }
+
+  /* Slow drifting light pools. */
+  .backdrop__glow {
+    width: 70vmax;
+    height: 70vmax;
+    border-radius: 50%;
+    will-change: transform;
+  }
+
+  .backdrop__glow--red {
+    top: -25vmax;
+    left: -20vmax;
+    background: radial-gradient(closest-side, rgb(225 6 0 / 28%), transparent);
+    animation: drift-a 28s ease-in-out infinite alternate;
+  }
+
+  .backdrop__glow--ice {
+    right: -25vmax;
+    bottom: -30vmax;
+    background: radial-gradient(closest-side, rgb(126 224 255 / 16%), transparent);
+    animation: drift-b 34s ease-in-out infinite alternate;
+  }
+
+  @keyframes drift-a {
+    to {
+      transform: translate3d(35vw, 45vh, 0) scale(1.15);
+    }
+  }
+
+  @keyframes drift-b {
+    to {
+      transform: translate3d(-40vw, -40vh, 0) scale(1.2);
+    }
+  }
+
+  /* Faint diagonal speed lines sweeping past. */
+  .backdrop__speed {
+    inset: -50% -100%;
+    opacity: 0.6;
+    background: repeating-linear-gradient(
+      -62deg,
+      transparent 0 140px,
+      rgb(255 255 255 / 3.5%) 140px 141px,
+      transparent 141px 260px,
+      rgb(225 6 0 / 5%) 260px 262px
+    );
+    animation: speed 9s linear infinite;
+  }
+
+  @keyframes speed {
+    to {
+      /* one horizontal pattern period, so the loop is seamless */
+      transform: translate3d(-296.7px, 0, 0);
+    }
+  }
+
+  /* Streaks that only show while the car is moving: opacity follows scroll speed. */
+  .backdrop__rush {
+    inset: -50% -100%;
+    opacity: calc(var(--lap-speed, 0) * 0.9);
+    background: repeating-linear-gradient(
+      -62deg,
+      transparent 0 70px,
+      rgb(255 255 255 / 7%) 70px 72px,
+      transparent 72px 190px,
+      rgb(126 224 255 / 9%) 190px 191px,
+      transparent 191px 330px,
+      rgb(225 6 0 / 10%) 330px 333px
+    );
+    animation: rush 1.1s linear infinite;
+  }
+
+  @keyframes rush {
+    to {
+      /* one horizontal pattern period (330 / sin 62°), so the loop is seamless */
+      transform: translate3d(-373.7px, 0, 0);
+    }
+  }
+
+  .backdrop__vignette {
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 45%, rgb(0 0 0 / 55%) 100%);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .backdrop__glow,
+    .backdrop__speed {
+      animation: none;
+    }
+
+    .backdrop__rush {
+      display: none;
+    }
+  }
+</style>

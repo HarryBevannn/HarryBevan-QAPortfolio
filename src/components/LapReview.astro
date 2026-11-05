@@ -1,0 +1,99 @@
+---
+/**
+ * LapReview: after the chequered flag the camera climbs out of the cockpit
+ * and looks down on the whole circuit. This is that top-down view: the full
+ * Track with the car on the line, every sector's split, and numbered markers
+ * that link back to each section (so it doubles as a map of the portfolio).
+ *
+ * Without JS (or under reduced motion) it's simply the circuit map at the end
+ * of the page. With the lap running, lap.ts scrubs the pull-up as it scrolls in:
+ *   [data-lap-review]  the section
+ *   [data-track-zoom]  the map, which settles from slightly zoomed in
+ */
+import Track from './Track.astro';
+---
+
+<section class="review" id="lap-review" aria-labelledby="lap-review-heading" data-lap-review>
+  <header class="review__head">
+    <p class="eyebrow review__eyebrow">
+      <span class="review__flag" aria-hidden="true"></span>
+      Lap complete
+    </p>
+    <h2 id="lap-review-heading" class="review__title">
+      The lap from above
+    </h2>
+    <p class="review__intro">
+      Every marker is a section of the portfolio, with the split time you reached it in. Pick one to
+      go back to it.
+    </p>
+  </header>
+  <div class="review__map panel">
+    <Track />
+  </div>
+</section>
+
+<style>
+  .review {
+    display: grid;
+    gap: var(--space-5);
+    padding-block: var(--space-8);
+    scroll-margin-top: calc(var(--minimap-height) + var(--space-4));
+  }
+
+  /* Mobile, in the car: the html scroll-padding already clears the windscreen. */
+  @media (max-width: 899px) {
+    :global(html.js[data-stage='track']) .review {
+      scroll-margin-top: 0;
+    }
+  }
+
+  .review__head {
+    display: grid;
+    gap: var(--space-3);
+    max-width: var(--content-max);
+  }
+
+  .review__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--color-grey-200);
+  }
+
+  .review__flag {
+    width: 1.5rem;
+    height: 1rem;
+    border-radius: 2px;
+    background: repeating-conic-gradient(var(--color-white) 0 25%, var(--color-black) 0 50%) 0 0 /
+      0.5rem 0.5rem;
+  }
+
+  .review__title {
+    font-size: clamp(2rem, 1.4rem + 3vw, 3.25rem);
+    letter-spacing: -0.02em;
+  }
+
+  .review__intro {
+    font-size: var(--text-lg);
+    color: var(--color-grey-200);
+  }
+
+  .review__map {
+    padding: var(--space-3);
+    overflow: hidden;
+  }
+
+  @media (min-width: 900px) {
+    .review {
+      min-height: 100vh;
+      align-content: center;
+      padding-block: var(--space-9);
+    }
+
+    .review__map {
+      width: min(100%, 64rem);
+      justify-self: center;
+      padding: var(--space-5);
+    }
+  }
+</style>

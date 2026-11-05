@@ -1,0 +1,254 @@
+---
+/**
+ * MiniMap: the circuit seen from above while you drive it in first person.
+ *
+ *   variant="bar"   mobile: pinned to the top of the screen with the sector,
+ *                   speed and lap % beside it
+ *   variant="dash"  desktop: the map on the pit-wall panel (PitWall)
+ *
+ * Shows the driven trail, the car's dot and a dot for each section, which
+ * turns red while you read that section and green once you've passed it.
+ * Decorative duplicate of the HUD and the finish map, so hidden from
+ * assistive tech.
+ *
+ * Hooks for src/animations/lap.ts:
+ *   [data-mini-trail] [data-mini-dot] [data-mini-marker=id]
+ *   bar only: [data-mini-sector] [data-mini-speed] [data-mini-progress] [data-mini-bar]
+ */
+import { START, TRACK_PATH, TRACK_VIEWBOX, pointOf } from '../data/track';
+import { lap } from '../data/lap';
+
+interface Props {
+  variant?: 'bar' | 'dash';
+}
+
+const { variant = 'bar' } = Astro.props;
+
+const markers = lap
+  .map((s, i) => ({ id: s.id, n: String(i + 1), waypoint: s.waypoint }))
+  .filter((m) => m.waypoint !== 'start' && m.waypoint !== 'finish')
+  .map((m) => {
+    const [x, y] = pointOf(m.waypoint);
+    return { ...m, x, y };
+  });
+---
+
+<div class:list={['minimap', `minimap--${variant}`]} data-minimap aria-hidden="true">
+  <svg class="minimap__svg" viewBox={`0 0 ${TRACK_VIEWBOX.width} ${TRACK_VIEWBOX.height}`}>
+    <path class="minimap__track" d={TRACK_PATH}></path>
+    <path class="minimap__trail" d={TRACK_PATH} pathLength="1" data-mini-trail></path>
+    <rect
+      class="minimap__line"
+      x="-4"
+      y="-26"
+      width="8"
+      height="52"
+      transform={`translate(${START.x} ${START.y}) rotate(${START.angle.toFixed(1)})`}
+    ></rect>
+    {markers.map((m) => (
+      <g class="minimap__marker" transform={`translate(${m.x} ${m.y})`} data-mini-marker={m.id}>
+        <circle r="26" />
+        {variant === 'dash' && (
+          <text y="9" text-anchor="middle">
+            {m.n}
+          </text>
+        )}
+      </g>
+    ))}
+    <circle
+      class="minimap__dot"
+      r={variant === 'dash' ? 22 : 34}
+      transform={`translate(${START.x} ${START.y})`}
+      data-mini-dot
+    ></circle>
+  </svg>
+
+  {variant === 'bar' && (
+    <>
+      <div class="minimap__text">
+        <span class="minimap__label">Sector</span>
+        <span class="minimap__sector" data-mini-sector>
+          {lap[0]?.sector}
+        </span>
+      </div>
+      <div class="minimap__readouts mono">
+        <span>
+          <b data-mini-speed>0</b> mph
+        </span>
+        <span>
+          <b data-mini-progress>0</b>%
+        </span>
+      </div>
+      <div class="minimap__bar">
+        <span data-mini-bar />
+      </div>
+    </>
+  )}
+</div>
+
+<style>
+  .minimap {
+    display: none;
+  }
+
+  /*
+   * Mobile + JS only: without JS there's nothing to track. Pinned across the
+   * top of the windscreen band (DriverView), over its sky.
+   */
+  @media (max-width: 899px) {
+    :global(html.js) .minimap--bar {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: var(--z-minimap);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      height: var(--minimap-height);
+      padding: var(--space-2) var(--gutter);
+      background: rgb(14 16 20 / 92%);
+      border-bottom: 1px solid var(--color-border);
+      box-shadow: 0 10px 24px -12px rgb(0 0 0 / 80%);
+      backdrop-filter: blur(8px);
+    }
+  }
+
+  @media (min-width: 900px) {
+    :global(html.js) .minimap--dash {
+      display: block;
+    }
+  }
+
+  .minimap__svg {
+    height: 100%;
+    width: auto;
+    aspect-ratio: 1000 / 680;
+    overflow: visible;
+  }
+
+  .minimap--dash .minimap__svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .minimap path {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .minimap__track {
+    stroke: var(--color-grey-300);
+    stroke-width: 40;
+  }
+
+  .minimap--dash .minimap__track {
+    stroke: var(--color-carbon-500);
+    stroke-width: 22;
+  }
+
+  .minimap__trail {
+    stroke: var(--color-accent);
+    stroke-width: 36;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .minimap--dash .minimap__trail {
+    stroke-width: 12;
+  }
+
+  .minimap__line {
+    fill: var(--color-white);
+  }
+
+  .minimap__marker circle {
+    fill: var(--color-black);
+    stroke: var(--color-grey-300);
+    stroke-width: 6;
+    transition:
+      fill var(--duration-base),
+      stroke var(--duration-base);
+  }
+
+  .minimap--bar .minimap__marker circle {
+    r: 18px;
+  }
+
+  .minimap__marker text {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 700;
+    fill: var(--color-white);
+  }
+
+  /* Passed sections turn green; the one being read is red. */
+  .minimap__marker:global(.is-cleared) circle {
+    fill: #0f3d26;
+    stroke: var(--color-green);
+  }
+
+  .minimap__marker:global(.is-active) circle {
+    fill: var(--color-red);
+    stroke: var(--color-white);
+  }
+
+  .minimap__dot {
+    fill: var(--color-red);
+    stroke: var(--color-white);
+    stroke-width: 8;
+    filter: drop-shadow(0 0 10px rgb(225 6 0 / 80%));
+  }
+
+  .minimap__text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.25;
+  }
+
+  .minimap__label {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+
+  .minimap__sector {
+    overflow: hidden;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .minimap__readouts {
+    display: grid;
+    justify-items: end;
+    font-size: var(--text-xs);
+    line-height: 1.3;
+    color: var(--color-text-muted);
+  }
+
+  .minimap__readouts b {
+    color: var(--color-white);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .minimap__bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 3px;
+    background: rgb(255 255 255 / 6%);
+  }
+
+  .minimap__bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-red), var(--color-accent));
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+</style>

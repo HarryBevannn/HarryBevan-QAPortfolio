@@ -1,0 +1,186 @@
+---
+/**
+ * StartScreen: the full-viewport intro. Carbon fibre and a blurred cockpit,
+ * vignette and slow ambient light, the start lights gantry and the ignition
+ * button. Only shown when JavaScript runs (see the head script in BaseLayout);
+ * without JS the portfolio content is the page.
+ */
+import Cockpit from './Cockpit.astro';
+import IgnitionButton from './IgnitionButton.astro';
+import StartLights from './StartLights.astro';
+import { site } from '../data/site';
+---
+
+<section class="start-screen" data-start-screen aria-label="Start sequence">
+  <div class="start-screen__carbon" aria-hidden="true"></div>
+  <Cockpit />
+  <div class="start-screen__ambient" aria-hidden="true"></div>
+  <div class="start-screen__vignette" aria-hidden="true"></div>
+  <div class="start-screen__top">
+    <p class="start-screen__title">
+      <span class="start-screen__name">{site.name}</span>
+      <span class="start-screen__divider" aria-hidden="true"></span>
+      <span class="sr-only">, </span>
+      <span class="start-screen__role">{site.product}</span>
+    </p>
+    <StartLights />
+  </div>
+  <div class="start-screen__centre" data-ignition-wrap>
+    <IgnitionButton />
+  </div>
+</section>
+
+<style>
+  .start-screen {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-start);
+    display: none;
+    place-items: center;
+    overflow: hidden;
+    background: var(--color-black);
+  }
+
+  :global(html.js:is([data-stage='intro'], [data-stage='armed'], [data-stage='starting']))
+    .start-screen {
+    display: grid;
+  }
+
+  /* Belt and braces: if scripts never load, "Skip intro" (href="#main") still works. */
+  :global(html:has(#main:target)) .start-screen {
+    display: none;
+  }
+
+  .start-screen__carbon,
+  .start-screen__ambient,
+  .start-screen__vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Carbon-fibre twill, pure CSS. */
+  .start-screen__carbon {
+    background:
+      linear-gradient(27deg, #151515 5px, transparent 5px) 0 5px,
+      linear-gradient(207deg, #151515 5px, transparent 5px) 10px 0,
+      linear-gradient(27deg, #222 5px, transparent 5px) 0 10px,
+      linear-gradient(207deg, #222 5px, transparent 5px) 10px 5px,
+      linear-gradient(90deg, #1b1b1b 10px, transparent 10px),
+      linear-gradient(
+        #1d1d1d 25%,
+        #1a1a1a 25%,
+        #1a1a1a 50%,
+        transparent 50%,
+        transparent 75%,
+        #242424 75%,
+        #242424
+      );
+    background-color: #131313;
+    background-size: 20px 20px;
+  }
+
+  /* Slow ambient light sweeping over the scene. */
+  .start-screen__ambient {
+    inset: -30%;
+    background:
+      radial-gradient(closest-side at 35% 40%, rgb(255 255 255 / 9%), transparent),
+      radial-gradient(closest-side at 70% 65%, rgb(225 6 0 / 7%), transparent);
+    animation: ambient-drift 16s ease-in-out infinite alternate;
+  }
+
+  @keyframes ambient-drift {
+    from {
+      transform: translate3d(-6%, -3%, 0) rotate(0deg);
+    }
+    to {
+      transform: translate3d(6%, 4%, 0) rotate(8deg);
+    }
+  }
+
+  .start-screen__vignette {
+    background: radial-gradient(
+      ellipse at center,
+      transparent 35%,
+      rgb(0 0 0 / 55%) 75%,
+      #000 115%
+    );
+  }
+
+  /* Title and start lights, stacked across the top. */
+  .start-screen__top {
+    position: absolute;
+    top: calc(var(--hud-size) + var(--space-5)); /* clear Skip intro on mobile */
+    left: 0;
+    right: 0;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding-inline: var(--gutter);
+    pointer-events: none;
+  }
+
+  .start-screen__title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    text-align: center;
+    animation: title-in 1.1s var(--ease-out) both;
+  }
+
+  .start-screen__name {
+    font-size: clamp(1.4rem, 1rem + 2vw, 2.25rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
+    color: var(--color-white);
+    text-shadow: 0 2px 18px rgb(0 0 0 / 80%);
+  }
+
+  .start-screen__divider {
+    width: 2.5rem;
+    height: 2px;
+    background: var(--color-red);
+    box-shadow: 0 0 12px var(--color-red-glow);
+  }
+
+  .start-screen__role {
+    font-family: var(--font-mono);
+    font-size: clamp(0.75rem, 0.65rem + 0.5vw, 1rem);
+    font-weight: 500;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-red-bright);
+  }
+
+  @keyframes title-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+      letter-spacing: 0.2em;
+    }
+  }
+
+  @media (min-width: 600px) {
+    .start-screen__title {
+      flex-direction: row;
+      gap: var(--space-4);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .start-screen__top {
+      top: max(var(--space-5), 3vh);
+      gap: var(--space-5);
+    }
+  }
+
+  .start-screen__centre {
+    position: relative;
+    z-index: 3;
+    padding-top: 8vh;
+  }
+</style>

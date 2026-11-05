@@ -1,0 +1,41 @@
+---
+/**
+ * TyreSmoke: an empty, fixed overlay that src/animations/tyreSmoke.ts fills
+ * with smoke puffs as the car pulls off the line. Sits above the start screen
+ * so the smoke covers the cut from cockpit to track. Decorative only.
+ */
+---
+
+<div class="smoke" data-smoke aria-hidden="true"></div>
+
+<style>
+  .smoke {
+    position: fixed;
+    inset: 0;
+    z-index: 55; /* above the start screen (50), below the HUD (60) */
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .smoke :global(.smoke__puff) {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--puff-size, 30vmin);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at 45% 45%,
+      rgb(236 238 241 / 75%) 0%,
+      rgb(214 217 222 / 45%) 32%,
+      rgb(190 194 200 / 18%) 55%,
+      transparent 70%
+    );
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  .smoke :global(.smoke__puff--big) {
+    --puff-size: 70vmax;
+  }
+</style>

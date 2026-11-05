@@ -1,0 +1,86 @@
+---
+/**
+ * BaseLayout: document shell, SEO/social meta, fonts and theme.
+ * Astro adds the Content-Security-Policy <meta> itself (security.csp in
+ * astro.config.mjs), hashing every script and style it emits.
+ */
+import '@fontsource/space-grotesk/latin-400.css';
+import '@fontsource/space-grotesk/latin-500.css';
+import '@fontsource/space-grotesk/latin-700.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-500.css';
+import '@fontsource/jetbrains-mono/latin-700.css';
+import '../styles/theme.css';
+import '../styles/global.css';
+import { site, withBase, INTRO_STORAGE_KEY } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Pages with the start sequence set the intro stage before first paint. */
+  intro?: boolean;
+}
+
+const { title = site.title, description = site.description, intro = false } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
+const ogImage = new URL(site.ogImage, Astro.site ?? site.url).href;
+
+const personJsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  jobTitle: site.role,
+  url: site.url,
+  address: { '@type': 'PostalAddress', addressLocality: 'Birmingham', addressCountry: 'GB' },
+  sameAs: [site.links.github],
+});
+---
+
+<!doctype html>
+<html lang="en-GB" class="no-js">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={site.name} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content={site.themeColor} />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href={withBase('favicon.svg')} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={withBase('apple-touch-icon.png')} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={site.ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={site.ogImageAlt} />
+
+    <script type="application/ld+json" is:inline set:html={personJsonLd} />
+    {intro && <script is:inline define:vars={{ key: INTRO_STORAGE_KEY }}>
+      const root = document.documentElement;
+      root.classList.replace('no-js', 'js');
+      let done = false;
+      try {
+        done = window.sessionStorage.getItem(key) === '1';
+      } catch {
+        /* storage blocked: just show the intro */
+      }
+      root.dataset.stage = done ? 'track' : 'intro';
+    </script>}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

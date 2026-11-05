@@ -1,0 +1,108 @@
+/*
+ * THEME: the single source of truth for colours, fonts, spacing and motion.
+ * Edit values here; components only ever reference these custom properties.
+ */
+:root {
+  /* ── Palette ─────────────────────────────────────────────── */
+  --color-black: #0a0b0d; /* near-black (start screen, deepest shadows) */
+  --color-carbon-900: #13151a;
+  --color-carbon-800: #1a1d23;
+  --color-carbon-700: #23262d;
+  --color-carbon-600: #30343c;
+  --color-carbon-500: #454a53;
+  --color-carbon-400: #6c717b;
+  --color-grey-300: #b3b8c0; /* body copy on dark: ~9:1 contrast */
+  --color-grey-200: #d5d8dd;
+  --color-white: #f5f6f7;
+
+  --color-red: #e10600; /* signature red: decoration and large text only */
+  --color-red-bright: #ff3b30; /* red for small text: passes 4.5:1 on black */
+  --color-red-deep: #8f0400;
+  --color-red-glow: rgb(225 6 0 / 55%);
+
+  --color-accent: #7ee0ff; /* racing line */
+  --color-accent-glow: rgb(126 224 255 / 35%);
+
+  --color-amber: #ffb000; /* warning lights */
+  --color-green: #3ddc84; /* rev LEDs / telemetry pass */
+
+  --color-metal-light: #e9ebee;
+  --color-metal-mid: #9aa0a8;
+  --color-metal-dark: #3b3f45;
+
+  /* Semantic aliases */
+  --color-bg: #0e1014;
+  --color-surface: rgb(28 31 37 / 86%); /* panels over the animated backdrop */
+  --color-surface-raised: rgb(40 44 52 / 90%);
+  --color-border: rgb(255 255 255 / 10%);
+  --color-border-strong: rgb(255 255 255 / 18%);
+  --color-text: var(--color-white);
+  --color-text-muted: var(--color-grey-300);
+  --color-focus: var(--color-accent);
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  --text-2xl: clamp(1.6rem, 1.3rem + 1.4vw, 2.25rem);
+  --text-3xl: clamp(2.4rem, 1.6rem + 4vw, 4.75rem);
+
+  --leading-tight: 1.1;
+  --leading-body: 1.6;
+  --tracking-wide: 0.12em;
+
+  /* ── Spacing (4px base) ─────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+  --space-9: 6rem;
+
+  --gutter: clamp(1rem, 4vw, 3rem);
+  --content-max: 40rem;
+
+  /* ── Shape & depth ──────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 10px;
+  --radius-lg: 18px;
+  --radius-round: 999px;
+  --shadow-panel: 0 1px 0 rgb(255 255 255 / 6%) inset, 0 18px 40px -18px rgb(0 0 0 / 70%);
+  --shadow-glow-red: 0 0 0 1px rgb(225 6 0 / 45%), 0 10px 40px -10px rgb(225 6 0 / 55%);
+
+  /* Red/white kerb stripe, the site's signature motif. */
+  --kerb: repeating-linear-gradient(-45deg, var(--color-red) 0 10px, var(--color-white) 10px 20px);
+  --kerb-straight: repeating-linear-gradient(
+    90deg,
+    var(--color-red) 0 18px,
+    var(--color-white) 18px 36px
+  );
+
+  /* ── Layers ─────────────────────────────────────────────── */
+  --z-track: 1;
+  --z-windscreen: 15; /* mobile: the road band, above the scrolling text */
+  --z-minimap: 20;
+  --z-hud: 60;
+  --z-start: 50;
+  --z-skip: 100;
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  --bp-desktop: 900px; /* reference only: media queries can't read vars */
+  --minimap-height: 4.25rem;
+  /* Mobile: height of the fixed windscreen band (road + cockpit) at the top. */
+  --windscreen-h: clamp(11rem, 36svh, 20rem);
+  --hud-size: 2.75rem; /* min 44px touch target */
+
+  /* ── Motion (CSS-only motion; GSAP timings live in src/animations/timings.ts) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+}

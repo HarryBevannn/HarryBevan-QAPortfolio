@@ -1,0 +1,48 @@
+# Visual baselines for Linux (what CI compares against). Run it by hand from
+# the Actions tab after an intended visual change, download the
+# "visual-baselines" artifact, and commit its PNGs into
+# tests/visual.spec.ts-snapshots/. It never commits or deploys anything itself.
+name: Update visual baselines
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baselines:
+    name: Capture Linux baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: true
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+
+      - name: Set up Node (from .nvmrc)
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture baselines
+        run: npx playwright test tests/visual.spec.ts --update-snapshots=all
+
+      - name: Upload baselines
+        uses: actions/upload-artifact@v7
+        with:
+          name: visual-baselines
+          path: tests/visual.spec.ts-snapshots/*-linux.png
+          if-no-files-found: error
+          retention-days: 7

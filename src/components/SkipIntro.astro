@@ -1,0 +1,62 @@
+---
+/**
+ * SkipIntro: the first focusable element on the page.
+ * During the intro it's a visible "Skip intro" link that jumps straight to the
+ * track/hero state (handled in intro-controller.ts). Afterwards, and without
+ * JavaScript, it becomes a standard "Skip to content" link, shown on focus.
+ */
+---
+
+<a class="skip-intro" href="#main" data-skip-intro data-testid="skip-intro">
+  <span class="skip-intro__intro">Skip intro</span>
+  <span class="skip-intro__content">Skip to content</span>
+</a>
+
+<style>
+  .skip-intro {
+    position: fixed;
+    top: var(--space-4);
+    left: var(--space-4);
+    z-index: var(--z-skip);
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--hud-size);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-round);
+    background: rgb(10 10 11 / 85%);
+    color: var(--color-white);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    text-decoration: none;
+    backdrop-filter: blur(6px);
+  }
+
+  .skip-intro:hover {
+    border-color: var(--color-grey-300);
+    color: var(--color-white);
+  }
+
+  .skip-intro__intro {
+    display: none;
+  }
+
+  /* Intro on screen: visible "Skip intro". */
+  :global(html.js:is([data-stage='intro'], [data-stage='armed'], [data-stage='starting']))
+    .skip-intro__intro {
+    display: inline;
+  }
+
+  :global(html.js:is([data-stage='intro'], [data-stage='armed'], [data-stage='starting']))
+    .skip-intro__content {
+    display: none;
+  }
+
+  /* Otherwise: classic skip link, hidden until focused. */
+  :global(html:not(.js)) .skip-intro:not(:focus),
+  :global(html.js[data-stage='track']) .skip-intro:not(:focus) {
+    translate: 0 calc(-100% - var(--space-6));
+  }
+</style>

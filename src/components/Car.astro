@@ -1,0 +1,70 @@
+---
+/**
+ * Car: an original, generic top-down car, drawn facing +x and centred on 0,0
+ * so it can follow the track path with MotionPathPlugin (autoRotate).
+ * Rendered inside Track's <svg>. Without JS it sits on the start line.
+ *
+ * Hooks for src/animations/lap.ts (all idle until the lap starts):
+ *   [data-car-body]   yawed a few degrees as the car slides through corners
+ *   [data-car-streak] speed streak behind the car, scaled with scroll speed
+ *   [data-car-brake]  brake lights, lit when the visitor scrolls back or stops
+ */
+import { START } from '../data/track';
+---
+
+<g
+  class="car"
+  data-car
+  data-heading={START.angle.toFixed(1)}
+  transform={`translate(${START.x} ${START.y}) rotate(${START.angle.toFixed(1)})`}
+>
+  <ellipse class="car__glow" rx="34" ry="20" fill="url(#tr-car-glow)" data-car-glow></ellipse>
+  <path
+    d="M-20 -6 L-90 -2 L-90 2 L-20 6 Z"
+    fill="url(#tr-car-streak)"
+    opacity="0"
+    data-car-streak
+  ></path>
+  <g transform="scale(0.95)" data-car-body>
+    <ellipse cx="1" cy="1.5" rx="23" ry="12" fill="#000" opacity="0.45"></ellipse>
+    <g fill="#0d0d0e">
+      <rect x="-17" y="-12.5" width="9" height="5" rx="1.5"></rect>
+      <rect x="-17" y="7.5" width="9" height="5" rx="1.5"></rect>
+      <rect x="8" y="-12" width="8" height="4.5" rx="1.5"></rect>
+      <rect x="8" y="7.5" width="8" height="4.5" rx="1.5"></rect>
+    </g>
+    <path
+      d="M-20 -7.5C-20 -9.6 -17 -10.5 -12 -10.5L7 -9.8C14 -9.2 19.5 -5.5 21 -2.2V2.2C19.5 5.5 14 9.2 7 9.8L-12 10.5C-17 10.5 -20 9.6 -20 7.5Z"
+      fill="#e10600"
+    ></path>
+    <path
+      d="M-20 -7.5C-20 -9.6 -17 -10.5 -12 -10.5L7 -9.8C14 -9.2 19.5 -5.5 21 -2.2V2.2C19.5 5.5 14 9.2 7 9.8L-12 10.5C-17 10.5 -20 9.6 -20 7.5Z"
+      fill="none"
+      stroke="#000"
+      stroke-opacity="0.4"
+      stroke-width="0.8"
+    ></path>
+    <path d="M1 -6.8Q8.5 -5.6 9.6 0Q8.5 5.6 1 6.8L-7 6.2Q-9.4 0 -7 -6.2Z" fill="#0d1117"></path>
+    <path
+      d="M2 -5Q6.5 -4 7.4 0"
+      fill="none"
+      stroke="#fff"
+      stroke-opacity="0.35"
+      stroke-width="0.9"
+    ></path>
+    <g fill="#f5f6f7">
+      <rect x="10" y="-2.6" width="9.5" height="1.5" rx="0.7"></rect>
+      <rect x="10" y="1.1" width="9.5" height="1.5" rx="0.7"></rect>
+    </g>
+    <rect x="-23" y="-10" width="3.6" height="20" rx="1" fill="#1f2125"></rect>
+    <g fill="#ff2a1f" opacity="0" data-car-brake>
+      <rect x="-24.5" y="-8.5" width="2.6" height="4" rx="0.8"></rect>
+      <rect x="-24.5" y="4.5" width="2.6" height="4" rx="0.8"></rect>
+      <ellipse cx="-26" rx="7" ry="11" fill="url(#tr-car-glow)"></ellipse>
+    </g>
+    <g fill="#ffe7b0">
+      <rect x="18.4" y="-6.5" width="1.6" height="3" rx="0.6"></rect>
+      <rect x="18.4" y="3.5" width="1.6" height="3" rx="0.6"></rect>
+    </g>
+  </g>
+</g>

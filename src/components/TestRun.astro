@@ -1,0 +1,610 @@
+---
+/**
+ * TestRun: the Telemetry block. This site's own Playwright results, loaded
+ * from the JSON the CI run writes (src/scripts/testRun.ts), with a replay of
+ * that run and live checks the visitor can run in their browser. "Break it"
+ * knocks a wheel off the car and plants real bugs for the live checks to
+ * catch; visual tests carry screenshots (baseline, this build, any diff),
+ * shown in a dialog from the test list.
+ *
+ * Without JavaScript it falls back to links to the raw results and CI.
+ */
+interface Props {
+  resultsUrl: string;
+  ciUrl: string;
+  audits: { label: string; value: string; detail?: string }[];
+  auditNote: string;
+}
+
+const { resultsUrl, ciUrl, audits, auditNote } = Astro.props;
+const totals = [
+  { key: 'passed', label: 'Passed', list: true },
+  { key: 'failed', label: 'Failed', list: true },
+  { key: 'skipped', label: 'Skipped', list: true },
+  { key: 'duration', label: 'Run time', list: false },
+];
+---
+
+<div class="test-run panel" data-reveal data-test-run data-results-url={resultsUrl}>
+  <div class="test-run__head">
+    <p class="test-run__badge" data-test-run-badge data-status="pending">
+      <span class="test-run__lamp" aria-hidden="true"></span>
+      <span data-test-run-status>Latest CI run</span>
+    </p>
+    <p class="test-run__meta mono" data-test-run-meta>
+      Playwright · desktop + mobile Chromium
+    </p>
+  </div>
+
+  <dl class="test-run__totals js-only">
+    {totals.map((t) => (
+      <div class:list={['test-run__total', `test-run__total--${t.key}`]}>
+        <dt>{t.label}</dt>
+        <dd class="mono" data-total={t.key}>
+          –
+        </dd>
+        {t.list && (
+          <dd class="test-run__view-wrap">
+            {/* Lists every test with this outcome in the console below. */}
+            <button
+              type="button"
+              class="test-run__view"
+              data-test-run-view={t.key}
+              data-testid={`test-run-view-${t.key}`}
+              aria-controls="test-run-console"
+              aria-pressed="false"
+              disabled
+            >
+              View tests<span class="sr-only"> that {t.label.toLowerCase()}</span>
+              <span aria-hidden="true"> →</span>
+            </button>
+          </dd>
+        )}
+      </div>
+    ))}
+  </dl>
+
+  <div class="test-run__actions js-only">
+    <button
+      type="button"
+      class="test-run__btn test-run__btn--primary"
+      data-test-run-replay
+      data-testid="test-run-replay"
+      disabled
+    >
+      <span aria-hidden="true">▶</span> Replay the CI run
+    </button>
+    <button type="button" class="test-run__btn" data-test-run-live data-testid="test-run-live">
+      <span aria-hidden="true">⚡</span> Run live checks
+    </button>
+    <button
+      type="button"
+      class="test-run__btn test-run__btn--break"
+      data-test-run-break
+      data-testid="test-run-break"
+      aria-describedby="test-run-break-hint"
+    >
+      <span aria-hidden="true" data-break-icon>
+        💥
+      </span>
+      <span data-break-label>Break it</span>
+    </button>
+  </div>
+  <p id="test-run-break-hint" class="test-run__hint js-only">
+    “Break it” knocks a wheel off the car and plants real bugs in this page. Then run the live
+    checks and watch them get caught.
+  </p>
+
+  <div class="test-run__screen js-only">
+    <div class="test-run__progress" aria-hidden="true">
+      <span data-test-run-bar></span>
+    </div>
+    <p class="test-run__counter mono" data-test-run-counter aria-hidden="true"></p>
+    <!-- role="log" sits on the scrolling wrapper so the lines stay a real list. -->
+    <div
+      id="test-run-console"
+      class="test-run__console mono"
+      role="log"
+      aria-label="Test output"
+      tabindex="0"
+      data-test-run-scroll
+      data-testid="test-console"
+    >
+      <ol class="test-run__lines" data-test-run-console>
+        <li class="test-run__line test-run__line--muted">
+          Press “Replay the CI run” to watch the suite that shipped this build, or “Run live checks”
+          to test this page in your browser now.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <p class="test-run__links">
+    <a href={resultsUrl} data-testid="test-results-json">
+      Raw results (JSON)
+    </a>
+    <span aria-hidden="true">·</span>
+    <a
+      href={ciUrl}
+      data-test-run-ci
+      data-testid="test-run-ci"
+      rel="noopener noreferrer"
+      target="_blank"
+    >
+      <span data-ci-label>CI runs on GitHub</span>
+      <span class="sr-only"> (opens in a new tab)</span>
+    </a>
+  </p>
+
+  <!-- Screenshots of a visual test: the approved baseline, this build's capture, any diff. -->
+  <dialog class="shots" aria-labelledby="shots-title" data-shots>
+    <div class="shots__head">
+      <h3 id="shots-title" class="shots__title" data-shots-title>
+        Screenshots
+      </h3>
+      <button type="button" class="shots__close" data-shots-close data-testid="test-shots-close">
+        Close<span aria-hidden="true"> ✕</span>
+      </button>
+    </div>
+    <p class="shots__meta mono" data-shots-meta></p>
+    <div class="shots__grid" data-shots-grid></div>
+  </dialog>
+
+  <div class="test-run__audits">
+    <p class="test-run__audit-note mono">{auditNote}</p>
+    <dl class="test-run__audit-grid">
+      {audits.map((a) => (
+        <div class="test-run__audit">
+          <dt>{a.label}</dt>
+          <dd class="mono">{a.value}</dd>
+          {a.detail && <dd class="test-run__audit-detail">{a.detail}</dd>}
+        </div>
+      ))}
+    </dl>
+  </div>
+</div>
+
+<script>
+  import { initTestRun } from '../scripts/testRun';
+  const root = document.querySelector<HTMLElement>('[data-test-run]');
+  if (root) initTestRun(root);
+</script>
+
+<style>
+  .test-run {
+    container: test-run / inline-size;
+    display: grid;
+    gap: var(--space-4);
+    padding: var(--space-5);
+    overflow: hidden;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 23px, rgb(255 255 255 / 3%) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, rgb(255 255 255 / 3%) 23px 24px),
+      rgb(13 17 22 / 92%);
+  }
+
+  :global(html:not(.js)) .js-only {
+    display: none;
+  }
+
+  .test-run__head {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .test-run__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    justify-self: start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-round);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-grey-200);
+    transition:
+      border-color var(--duration-base),
+      color var(--duration-base);
+  }
+
+  .test-run__badge[data-status='passed'] {
+    border-color: var(--color-green);
+    background: rgb(61 220 132 / 10%);
+    color: var(--color-green);
+    box-shadow: 0 0 24px -6px rgb(61 220 132 / 60%);
+  }
+
+  .test-run__badge[data-status='failed'] {
+    border-color: var(--color-red-bright);
+    background: rgb(225 6 0 / 12%);
+    color: var(--color-red-bright);
+  }
+
+  .test-run__lamp {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    background: var(--color-amber);
+  }
+
+  [data-status='passed'] .test-run__lamp {
+    background: var(--color-green);
+    box-shadow: 0 0 10px var(--color-green);
+    animation: lamp 2s ease-in-out infinite;
+  }
+
+  [data-status='failed'] .test-run__lamp {
+    background: var(--color-red-bright);
+  }
+
+  @keyframes lamp {
+    50% {
+      opacity: 0.4;
+    }
+  }
+
+  .test-run__meta,
+  .test-run__audit-note {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    overflow-wrap: anywhere;
+  }
+
+  /* ── Totals ───────────────────────────────────────────── */
+  .test-run__totals,
+  .test-run__audit-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+  }
+
+  .test-run__total,
+  .test-run__audit {
+    padding: var(--space-3) var(--space-4);
+    border-left: 3px solid var(--color-grey-300);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    background: rgb(255 255 255 / 4%);
+  }
+
+  .test-run__total--passed,
+  .test-run__audit {
+    border-left-color: var(--color-green);
+  }
+
+  .test-run__total--failed {
+    border-left-color: var(--color-red);
+  }
+
+  .test-run__total--duration {
+    border-left-color: var(--color-accent);
+  }
+
+  .test-run__view-wrap {
+    margin: var(--space-1) 0 0;
+  }
+
+  .test-run__view {
+    padding: var(--space-1) 0;
+    border: 0;
+    background: none;
+    color: var(--color-accent);
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  .test-run__view:hover {
+    color: var(--color-white);
+  }
+
+  .test-run__view[aria-pressed='true'] {
+    color: var(--color-white);
+    text-decoration-thickness: 2px;
+  }
+
+  .test-run__view:disabled {
+    color: var(--color-text-muted);
+    text-decoration: none;
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  .test-run__total dt,
+  .test-run__audit dt {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  .test-run__total dd,
+  .test-run__audit dd {
+    margin: 0;
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    color: var(--color-white);
+  }
+
+  .test-run__audit .test-run__audit-detail {
+    font-family: var(--font-sans);
+    font-size: var(--text-xs);
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  /* ── Buttons ──────────────────────────────────────────── */
+  .test-run__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .test-run__btn {
+    display: inline-flex;
+    flex: 1 1 12rem;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 3rem;
+    padding: 0 var(--space-5);
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-round);
+    background: rgb(255 255 255 / 6%);
+    color: var(--color-white);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      border-color var(--duration-fast),
+      background var(--duration-fast),
+      transform var(--duration-base) var(--ease-out);
+  }
+
+  .test-run__btn:hover:not(:disabled) {
+    border-color: var(--color-green);
+    transform: translateY(-1px);
+  }
+
+  .test-run__btn--primary {
+    border-color: rgb(61 220 132 / 55%);
+    background: rgb(61 220 132 / 14%);
+  }
+
+  .test-run__btn--break {
+    border-color: rgb(225 6 0 / 55%);
+    background: rgb(225 6 0 / 14%);
+  }
+
+  .test-run__btn--break:hover:not(:disabled) {
+    border-color: var(--color-red-bright);
+  }
+
+  :global([data-broken]) .test-run__btn--break {
+    border-color: var(--color-amber);
+    background: rgb(255 176 0 / 14%);
+  }
+
+  .test-run__hint {
+    margin: calc(var(--space-2) * -1) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .test-run__btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+
+  /* ── Console ──────────────────────────────────────────── */
+  .test-run__screen {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .test-run__progress {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgb(255 255 255 / 8%);
+  }
+
+  .test-run__progress span {
+    display: block;
+    height: 100%;
+    background: var(--color-green);
+    box-shadow: 0 0 8px var(--color-green);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+
+  .test-run__counter {
+    min-height: 1em;
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    text-align: right;
+  }
+
+  .test-run__console {
+    height: 18rem;
+    padding: var(--space-3) var(--space-4);
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-sm);
+    background: rgb(5 7 9 / 90%);
+    font-size: var(--text-xs);
+    line-height: 1.45;
+  }
+
+  .test-run__lines {
+    display: grid;
+    align-content: start;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .test-run__console :global(.test-run__line) {
+    display: flex;
+    gap: var(--space-2);
+    color: var(--color-grey-200);
+    overflow-wrap: anywhere;
+  }
+
+  .test-run__console :global(.test-run__line--muted) {
+    color: var(--color-text-muted);
+  }
+
+  .test-run__console :global(.test-run__icon) {
+    flex: none;
+    width: 1ch;
+    font-weight: 700;
+  }
+
+  .test-run__console :global(.test-run__line--passed .test-run__icon),
+  .test-run__console :global(.test-run__line--passed:not(:has(.test-run__icon))) {
+    color: var(--color-green);
+  }
+
+  .test-run__console :global(.test-run__line--failed .test-run__icon),
+  .test-run__console :global(.test-run__line--failed:not(:has(.test-run__icon))) {
+    color: var(--color-red-bright);
+  }
+
+  .test-run__console :global(.test-run__line--flaky .test-run__icon) {
+    color: var(--color-amber);
+  }
+
+  .test-run__console :global(.test-run__line--skipped) {
+    color: var(--color-text-muted);
+  }
+
+  .test-run__console :global(.test-run__text) {
+    display: grid;
+  }
+
+  .test-run__console :global(.test-run__meta-line) {
+    color: var(--color-text-muted);
+  }
+
+  .test-run__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+  }
+
+  .test-run__audits {
+    display: grid;
+    gap: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-carbon-500);
+  }
+
+  /* Four across only when the panel itself is wide (it sits in a column on desktop). */
+  @container test-run (min-width: 40rem) {
+    .test-run__totals,
+    .test-run__audit-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* ── Screenshots (visual tests) ───────────────────────── */
+  :global(.test-run__shots) {
+    justify-self: start;
+    margin-top: var(--space-1);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-accent);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  :global(.test-run__shots:hover) {
+    color: var(--color-white);
+  }
+
+  .shots {
+    width: min(64rem, calc(100vw - 2 * var(--gutter)));
+    max-height: calc(100dvh - 2 * var(--gutter));
+    padding: var(--space-5);
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  .shots::backdrop {
+    background: rgb(0 0 0 / 75%);
+  }
+
+  .shots__head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .shots__title {
+    font-size: var(--text-lg);
+  }
+
+  .shots__close {
+    flex: none;
+    min-height: var(--hud-size);
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-round);
+    background: rgb(255 255 255 / 6%);
+    color: var(--color-white);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .shots__meta {
+    margin: var(--space-2) 0 var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .shots__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-4);
+  }
+
+  .shots__grid :global(figure) {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+  }
+
+  .shots__grid :global(img) {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-sm);
+    background: #000;
+  }
+
+  .shots__grid :global(figcaption) {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-grey-200);
+  }
+</style>

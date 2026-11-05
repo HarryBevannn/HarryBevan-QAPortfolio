@@ -1,0 +1,20 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    ignore:
+      # @astrojs/check only supports TypeScript up to 6; lift this when it supports 7.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Node's types track the Node version the site runs on (Node 24 LTS, .nvmrc).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

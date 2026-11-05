@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../data/site';
+---
+
+<BaseLayout title="Off track | Harry Bevan">
+  <main class="off-track" id="main">
+    <p class="eyebrow">404 · Off track</p>
+    <h1>You’ve run wide.</h1>
+    <p>That page isn’t on the circuit. Rejoin safely and head back to the start line.</p>
+    <a href={withBase()} data-testid="back-to-start">
+      Back to the start line →
+    </a>
+  </main>
+</BaseLayout>
+
+<style>
+  .off-track {
+    display: grid;
+    gap: var(--space-4);
+    align-content: center;
+    min-height: 100vh;
+    max-width: var(--content-max);
+    padding: var(--gutter);
+    margin-inline: auto;
+  }
+
+  h1 {
+    font-size: var(--text-3xl);
+  }
+</style>

@@ -1,0 +1,184 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SkipIntro from '../components/SkipIntro.astro';
+import StartScreen from '../components/StartScreen.astro';
+import HudControls from '../components/HudControls.astro';
+import PitWall from '../components/PitWall.astro';
+import Backdrop from '../components/Backdrop.astro';
+import TyreSmoke from '../components/TyreSmoke.astro';
+import MiniMap from '../components/MiniMap.astro';
+import DriverView from '../components/DriverView.astro';
+import LapReview from '../components/LapReview.astro';
+import LapSection from '../components/LapSection.astro';
+import { lap } from '../data/lap';
+import { site } from '../data/site';
+
+const [hero, ...rest] = lap;
+const year = new Date().getFullYear();
+---
+
+<BaseLayout intro>
+  <SkipIntro />
+  <StartScreen />
+  <HudControls />
+  <Backdrop />
+  <DriverView />
+  <TyreSmoke />
+
+  <div class="page" data-page>
+    <main id="main" tabindex="-1">
+      <div class="lap" data-lap>
+        <div class="lap__track">
+          <div class="lap__track-sticky">
+            <PitWall />
+          </div>
+        </div>
+
+        {hero && <LapSection section={hero} index={0} nextId={rest[0]?.id} />}
+
+        <MiniMap />
+
+        <div class="lap__sections">
+          {rest.map((section, i) => (
+            <LapSection section={section} index={i + 1} />
+          ))}
+        </div>
+      </div>
+
+      <div class="lap__review">
+        <LapReview />
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="kerb footer__kerb" aria-hidden="true"></div>
+      <p class="footer__name">
+        {site.name} · {site.product}
+      </p>
+      <p>
+        © {year} {site.name}. Original artwork, with no affiliation to any racing series, circuit or
+        manufacturer.
+      </p>
+      <p>
+        Built with Astro and GSAP ·{' '}
+        <a href={site.links.github} data-testid="footer-github">
+          GitHub
+        </a>
+      </p>
+    </footer>
+  </div>
+
+  <div class="sr-only" aria-live="polite" aria-atomic="true" data-announcer></div>
+</BaseLayout>
+
+<script>
+  import { initIntro } from '../scripts/intro-controller';
+  initIntro();
+</script>
+
+<style>
+  /* While the intro is up, the page is hidden underneath the start screen. */
+  :global(html.js:is([data-stage='intro'], [data-stage='armed'])) .page {
+    visibility: hidden;
+  }
+
+  :global(html:has(#main:target)) .page {
+    visibility: visible;
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  /*
+   * Mobile first: hero, pinned mini-map bar, then sections, all over the
+   * first-person road (DriverView). The top-down map closes the lap.
+   */
+  .lap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding-inline: var(--gutter);
+    overflow-x: clip; /* big sector numbers never cause sideways scroll */
+  }
+
+  .lap__track {
+    /* Clear the Skip-to-content link and leave room for the hero. */
+    padding-top: calc(var(--space-6) + var(--space-3));
+  }
+
+  /* Mobile, in the car: the text starts below the windscreen band. */
+  @media (max-width: 899px) {
+    :global(html.js:is([data-stage='starting'], [data-stage='track'])) .lap__track {
+      padding-top: calc(var(--windscreen-h) + var(--space-4));
+    }
+  }
+
+  .lap__track-sticky {
+    display: grid;
+    place-items: center;
+  }
+
+  .lap__review {
+    padding-inline: var(--gutter);
+  }
+
+  /* Mini-map breaks out of the gutter to span the screen. */
+  .lap > :global(.minimap) {
+    margin-inline: calc(var(--gutter) * -1);
+  }
+
+  .footer {
+    display: grid;
+    gap: var(--space-2);
+    /* Room for the fixed HUD buttons on mobile. */
+    padding: var(--space-6) var(--gutter) calc(var(--space-7) + var(--hud-size));
+    background: rgb(10 11 13 / 75%);
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+
+  .footer__kerb {
+    margin-bottom: var(--space-4);
+  }
+
+  .footer__name {
+    color: var(--color-white);
+    font-weight: 700;
+  }
+
+  /*
+   * Desktop: CV on the left, the windscreen on the right with the pit-wall
+   * dash (HUD, mini-map, sector nav) pinned in its top corner.
+   */
+  @media (min-width: 900px) {
+    .lap {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-7);
+    }
+
+    .lap__track {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      padding-top: 0;
+    }
+
+    .lap__track-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      place-items: start end;
+      /* Clear the fixed Replay/Sound buttons. */
+      padding-block: calc(var(--hud-size) + var(--space-6)) var(--space-6);
+    }
+
+    .lap__track-sticky > :global(.pitwall) {
+      max-width: 19rem;
+    }
+
+    .lap > :global(.lap-section--hero),
+    .lap__sections {
+      grid-column: 1;
+    }
+  }
+</style>

@@ -1,0 +1,118 @@
+---
+/**
+ * HudControls: "Replay start" and the sound toggle (on by default; mute is remembered).
+ * JS-only controls, so the whole bar is hidden without JavaScript.
+ * Wired up in src/scripts/intro-controller.ts.
+ */
+---
+
+<header class="hud" aria-label="Site controls">
+  <button type="button" class="control-btn" data-replay data-testid="replay-start" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        d="M4 12a8 8 0 1 0 2.3-5.6M4 4v4h4"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      ></path>
+    </svg>
+    <span class="hud__label">Replay start</span>
+  </button>
+  <button
+    type="button"
+    class="control-btn"
+    data-sound-toggle
+    data-testid="sound-toggle"
+    aria-pressed="true"
+  >
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"></path>
+      <path
+        class="hud__waves"
+        d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      ></path>
+      <path
+        class="hud__mute"
+        d="M16 9l5 6M21 9l-5 6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+      ></path>
+    </svg>
+    <span class="hud__label">
+      Sound <span data-sound-state>on</span>
+    </span>
+  </button>
+</header>
+
+<style>
+  .hud {
+    display: none;
+  }
+
+  :global(html.js) .hud {
+    position: fixed;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    z-index: var(--z-hud);
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  /* Mobile, on the lap: up in the windscreen band, just under the mini-map bar. */
+  @media (max-width: 899px) {
+    :global(html.js[data-stage='track']) .hud {
+      top: calc(var(--minimap-height) + var(--space-3));
+      right: var(--gutter);
+      bottom: auto;
+    }
+  }
+
+  @media (min-width: 900px) {
+    :global(html.js) .hud {
+      top: var(--space-4);
+      bottom: auto;
+    }
+  }
+
+  /* Small screens: round icon-only buttons so they don't cover the content. */
+  @media (max-width: 599px) {
+    .hud .control-btn {
+      justify-content: center;
+      width: var(--hud-size);
+      padding: 0;
+    }
+
+    .hud__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+  }
+
+  .hud [hidden] {
+    display: none;
+  }
+
+  .hud__waves {
+    display: none;
+  }
+
+  [aria-pressed='true'] .hud__waves {
+    display: inline;
+  }
+
+  [aria-pressed='true'] .hud__mute {
+    display: none;
+  }
+</style>

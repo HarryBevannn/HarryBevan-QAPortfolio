@@ -1,0 +1,354 @@
+---
+/**
+ * Cockpit: a first-person view of an original, generic car interior. It sits
+ * behind the start button, blurred and low-contrast, and sharpens on ignition.
+ *
+ * Animated parts (src/animations/engineStart.ts):
+ *   [data-needle]       dial needles; rotate around data-cx/data-cy
+ *   [data-warning]      warning lamp glow layers
+ *   [data-rev-led]      rev-counter LED glow layers, in firing order
+ *   [data-cockpit-shake] the group that rumbles
+ */
+interface Dial {
+  id: string;
+  cx: number;
+  cy: number;
+  r: number;
+  labels: string[];
+  redFrom: number; // 0..1 of the sweep where the red zone starts
+  unit: string;
+}
+
+// Presentation attributes can't read CSS variables, so mirror theme.css here.
+const C = { red: '#e10600', amber: '#ffb000', green: '#3ddc84' };
+
+const SWEEP = 270; // degrees of needle travel
+const START_DEG = -135;
+
+const dials: Dial[] = [
+  {
+    id: 'speed',
+    cx: 400,
+    cy: 640,
+    r: 118,
+    labels: ['0', '40', '80', '120', '160', '200'],
+    redFrom: 1.1,
+    unit: 'MPH',
+  },
+  {
+    id: 'rpm',
+    cx: 1200,
+    cy: 640,
+    r: 118,
+    labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+    redFrom: 0.78,
+    unit: 'x1000 RPM',
+  },
+];
+
+const polar = (cx: number, cy: number, r: number, deg: number) => {
+  const rad = (deg * Math.PI) / 180;
+  return { x: +(cx + r * Math.sin(rad)).toFixed(1), y: +(cy - r * Math.cos(rad)).toFixed(1) };
+};
+
+function ticks(d: Dial) {
+  const majors = d.labels.length - 1;
+  const minorPerMajor = 4;
+  const total = majors * minorPerMajor;
+  return Array.from({ length: total + 1 }, (_, i) => {
+    const t = i / total;
+    const deg = START_DEG + SWEEP * t;
+    const major = i % minorPerMajor === 0;
+    const a = polar(d.cx, d.cy, d.r - 6, deg);
+    const b = polar(d.cx, d.cy, d.r - (major ? 24 : 14), deg);
+    return { a, b, major, red: t >= d.redFrom };
+  });
+}
+
+function labelPositions(d: Dial) {
+  return d.labels.map((text, i) => {
+    const deg = START_DEG + (SWEEP * i) / (d.labels.length - 1);
+    return { text, ...polar(d.cx, d.cy, d.r - 42, deg) };
+  });
+}
+
+function redArc(d: Dial) {
+  if (d.redFrom > 1) return null;
+  const r = d.r - 10;
+  const s = polar(d.cx, d.cy, r, START_DEG + SWEEP * d.redFrom);
+  const e = polar(d.cx, d.cy, r, START_DEG + SWEEP);
+  return `M${s.x} ${s.y} A${r} ${r} 0 0 1 ${e.x} ${e.y}`;
+}
+
+// Rev LEDs across the top of the wheel, left to right: green, amber, red.
+const WHEEL = { cx: 800, cy: 1010, r: 330 };
+const revLeds = Array.from({ length: 15 }, (_, i) => {
+  const deg = -26 + (52 * i) / 14;
+  const p = polar(WHEEL.cx, WHEEL.cy, WHEEL.r - 22, deg);
+  const colour = i < 5 ? C.green : i < 10 ? C.amber : C.red;
+  return { ...p, colour };
+});
+
+const warnings = [
+  { x: 300, label: 'OIL', colour: C.red },
+  { x: 365, label: 'BATT', colour: C.red },
+  { x: 435, label: 'ENG', colour: C.amber },
+  { x: 500, label: 'TC', colour: C.amber },
+  { x: 1100, label: 'ABS', colour: C.amber },
+  { x: 1165, label: 'BRK', colour: C.red },
+  { x: 1235, label: 'TEMP', colour: C.red },
+  { x: 1300, label: 'FUEL', colour: C.amber },
+];
+---
+
+<div class="cockpit" data-cockpit aria-hidden="true">
+  <svg
+    class="cockpit__svg"
+    viewBox="0 0 1600 900"
+    preserveAspectRatio="xMidYMax slice"
+    focusable="false"
+  >
+    <defs>
+      <linearGradient id="ck-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0b0c0e"></stop>
+        <stop offset="1" stop-color="#1a1c20"></stop>
+      </linearGradient>
+      <linearGradient id="ck-dash" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#26282d"></stop>
+        <stop offset="0.25" stop-color="#141518"></stop>
+        <stop offset="1" stop-color="#070708"></stop>
+      </linearGradient>
+      <pattern id="ck-carbon" width="12" height="12" patternUnits="userSpaceOnUse">
+        <rect width="12" height="12" fill="#121316"></rect>
+        <rect width="6" height="6" fill="#1b1d21"></rect>
+        <rect x="6" y="6" width="6" height="6" fill="#1b1d21"></rect>
+      </pattern>
+      <radialGradient id="ck-face" cx="0.5" cy="0.45" r="0.6">
+        <stop offset="0" stop-color="#1e2024"></stop>
+        <stop offset="1" stop-color="#08090a"></stop>
+      </radialGradient>
+      <linearGradient id="ck-chrome" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#d9dde2"></stop>
+        <stop offset="0.5" stop-color="#5b5f66"></stop>
+        <stop offset="1" stop-color="#202226"></stop>
+      </linearGradient>
+      <linearGradient id="ck-wheel" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2a2c31"></stop>
+        <stop offset="1" stop-color="#0c0d0f"></stop>
+      </linearGradient>
+    </defs>
+
+    <g data-cockpit-shake>
+      <!-- Windscreen: the grid ahead -->
+      <rect width="1600" height="900" fill="url(#ck-sky)"></rect>
+      <polygon points="760,430 840,430 1180,620 420,620" fill="#202227"></polygon>
+      <g stroke="#f5f6f7" stroke-opacity="0.18" stroke-width="3">
+        <line x1="700" y1="470" x2="900" y2="470"></line>
+        <line x1="640" y1="505" x2="960" y2="505"></line>
+        <line x1="570" y1="545" x2="1030" y2="545"></line>
+      </g>
+      <line
+        x1="800"
+        y1="430"
+        x2="800"
+        y2="620"
+        stroke="#7ee0ff"
+        stroke-opacity="0.2"
+        stroke-width="3"
+      ></line>
+
+      <!-- A-pillars -->
+      <polygon points="0,0 230,0 470,560 0,720" fill="#060607"></polygon>
+      <polygon points="1600,0 1370,0 1130,560 1600,720" fill="#060607"></polygon>
+
+      <!-- Dash cowl -->
+      <path d="M0 610 Q800 360 1600 610 V900 H0 Z" fill="url(#ck-carbon)"></path>
+      <path d="M0 610 Q800 360 1600 610 V900 H0 Z" fill="url(#ck-dash)" opacity="0.75"></path>
+      <path d="M0 610 Q800 360 1600 610" fill="none" stroke="#3a3d43" stroke-width="3"></path>
+
+      <!-- Dials -->
+      {dials.map((d) => (
+        <g
+          class:list={[
+            'cockpit__side',
+            d.cx < 800 ? 'cockpit__side--left' : 'cockpit__side--right',
+          ]}
+        >
+          <circle cx={d.cx} cy={d.cy} r={d.r + 12} fill="url(#ck-chrome)" />
+          <circle cx={d.cx} cy={d.cy} r={d.r} fill="url(#ck-face)" />
+          {redArc(d) && <path d={redArc(d)!} fill="none" stroke={C.red} stroke-width="8" />}
+          <g stroke-linecap="round">
+            {ticks(d).map((t) => (
+              <line
+                x1={t.a.x}
+                y1={t.a.y}
+                x2={t.b.x}
+                y2={t.b.y}
+                stroke={t.red ? C.red : '#e9ebee'}
+                stroke-width={t.major ? 4 : 2}
+                stroke-opacity={t.major ? 1 : 0.6}
+              />
+            ))}
+          </g>
+          {labelPositions(d).map((l) => (
+            <text x={l.x} y={l.y + 7} class="cockpit__num" text-anchor="middle">
+              {l.text}
+            </text>
+          ))}
+          <text x={d.cx} y={d.cy + 62} class="cockpit__unit" text-anchor="middle">
+            {d.unit}
+          </text>
+          <g transform={`rotate(${START_DEG} ${d.cx} ${d.cy})`}>
+            <g data-needle data-cx={d.cx} data-cy={d.cy}>
+              <path
+                d={`M${d.cx - 4} ${d.cy + 18} L${d.cx} ${d.cy - d.r + 16} L${d.cx + 4} ${d.cy + 18} Z`}
+                fill={C.red}
+              />
+            </g>
+          </g>
+          <circle cx={d.cx} cy={d.cy} r="14" fill="url(#ck-chrome)" />
+        </g>
+      ))}
+
+      <!-- Warning lights -->
+      {warnings.map((w) => (
+        <g
+          class:list={['cockpit__side', w.x < 800 ? 'cockpit__side--left' : 'cockpit__side--right']}
+        >
+          <rect
+            x={w.x - 27}
+            y="790"
+            width="54"
+            height="28"
+            rx="5"
+            fill="#0b0c0e"
+            stroke="#2a2c31"
+          />
+          <rect
+            data-warning
+            x={w.x - 27}
+            y="790"
+            width="54"
+            height="28"
+            rx="5"
+            fill={w.colour}
+            opacity="0"
+          />
+          <text x={w.x} y="809" class="cockpit__warn" text-anchor="middle">
+            {w.label}
+          </text>
+        </g>
+      ))}
+
+      <!-- Steering wheel -->
+      <circle
+        cx={WHEEL.cx}
+        cy={WHEEL.cy}
+        r={WHEEL.r}
+        fill="none"
+        stroke="url(#ck-wheel)"
+        stroke-width="64"
+      ></circle>
+      <circle
+        cx={WHEEL.cx}
+        cy={WHEEL.cy}
+        r={WHEEL.r + 30}
+        fill="none"
+        stroke="#3a3d43"
+        stroke-width="2"
+        stroke-opacity="0.7"
+      ></circle>
+      <path d="M560 900 L680 800 H920 L1040 900 Z" fill="#141518"></path>
+      <rect x="680" y="770" width="240" height="130" rx="22" fill="#0f1012" stroke="#3a3d43"></rect>
+      <rect x="720" y="790" width="160" height="70" rx="8" fill="#050607"></rect>
+      <text x="800" y="840" class="cockpit__gear" text-anchor="middle">
+        N
+      </text>
+      <text x="745" y="808" class="cockpit__lcd">
+        RPM
+      </text>
+      <text x="855" y="808" class="cockpit__lcd" text-anchor="end">
+        0000
+      </text>
+      <circle cx="700" cy="880" r="10" fill="#1f2125" stroke="#5b5f66"></circle>
+      <circle cx="900" cy="880" r="10" fill="#1f2125" stroke="#5b5f66"></circle>
+
+      <!-- Rev-counter LEDs on the wheel rim -->
+      {revLeds.map((led) => (
+        <g>
+          <circle cx={led.x} cy={led.y} r="11" fill="#050506" stroke="#2a2c31" stroke-width="2" />
+          <g data-rev-led opacity="0">
+            <circle cx={led.x} cy={led.y} r="20" fill={led.colour} opacity="0.3" />
+            <circle cx={led.x} cy={led.y} r="9" fill={led.colour} />
+          </g>
+        </g>
+      ))}
+    </g>
+  </svg>
+</div>
+
+<style>
+  .cockpit {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.55;
+    filter: blur(10px) brightness(0.6) saturate(0.6);
+    transform: scale(1.04); /* hides blurred edges */
+    will-change: filter, transform;
+  }
+
+  /*
+   * Portrait screens crop the wide dash, so pull the dials and warning lamps
+   * in beside the wheel. (CSS transforms on SVG elements use user units.)
+   */
+  @media (max-aspect-ratio: 1/1) {
+    .cockpit__side--left {
+      transform: translate(450px, 116px) scale(0.6);
+    }
+
+    .cockpit__side--right {
+      transform: translate(190px, 116px) scale(0.6);
+    }
+  }
+
+  .cockpit__svg {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+  }
+
+  .cockpit__num {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 500;
+    fill: var(--color-metal-light);
+  }
+
+  .cockpit__unit,
+  .cockpit__lcd {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    fill: var(--color-grey-300);
+  }
+
+  .cockpit__lcd {
+    fill: var(--color-green);
+  }
+
+  .cockpit__gear {
+    font-family: var(--font-mono);
+    font-size: 44px;
+    font-weight: 700;
+    fill: var(--color-white);
+  }
+
+  .cockpit__warn {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    fill: #26282d;
+  }
+</style>
