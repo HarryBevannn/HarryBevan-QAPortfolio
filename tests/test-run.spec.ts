@@ -206,7 +206,9 @@ test.describe('Break it', () => {
     const breakIt = page.getByTestId('test-run-break');
     const output = page.getByTestId('test-console');
     const wheel = page.locator('[data-driver-hub="left"]');
+    const wheelAt = () => wheel.evaluate((e) => e.getBoundingClientRect().toJSON());
     await expect(breakIt).toHaveAccessibleName(/Break it/);
+    const fitted = await wheelAt();
 
     await breakIt.click();
     await expect(breakIt).toHaveAccessibleName(/Fix it/);
@@ -232,6 +234,13 @@ test.describe('Break it', () => {
     await expect(output).toContainText('Pit stop: wheel back on');
     await expect(page.locator('[data-driver-gear]')).toHaveText('7');
     await expect(wheel).toHaveCSS('visibility', 'visible');
+    // ...and back on the car, exactly where it started (not just visible).
+    await expect
+      .poll(async () => {
+        const now = await wheelAt();
+        return Math.max(Math.abs(now.x - fitted.x), Math.abs(now.y - fitted.y));
+      })
+      .toBeLessThan(10);
     await expect(page.getByTestId('footer-github')).toHaveCount(1);
     await expect(page.locator('#automation h3')).not.toHaveCount(0);
     await expect(page.locator('#automation h5')).toHaveCount(0);

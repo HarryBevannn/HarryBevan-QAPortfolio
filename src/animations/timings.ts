@@ -105,7 +105,10 @@ export const TIMINGS = {
     fly: 1.3, // ...and bounces away down the road
     lurch: 3, // degrees the car drops onto the bare corner
     shake: 0.5, // camera shake on impact
-    refit: 0.6, // "Fix it": the wheel flies back on
+    jack: 0.25, // "Fix it" pit stop: the car is jacked up level
+    refit: 0.55, // ...the wheel rolls in onto the hub
+    gun: 0.35, // ...the wheel gun spins it tight
+    drop: 0.45, // ...and the car drops back down
   },
 
   /** Content arriving on scroll (skipped under reduced motion). */

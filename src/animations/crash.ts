@@ -2,8 +2,9 @@
  * "Break it" (Telemetry): the front-left wheel comes off. It hops off the
  * hub and bounces away down the road ahead, the suspension droops, the car lurches onto that
  * corner with sparks scraping off the road, and the gear display shows "!".
- * "Fix it" sends the pit crew in: the wheel flies back on and everything
- * settles. Reduced motion: the wheel just fades out and back.
+ * "Fix it" is a pit stop: the car is jacked up, the wheel rolls in from the
+ * side and onto the hub, the wheel gun spins it tight, and the car drops back
+ * onto four wheels. Reduced motion: the wheel just fades out and back.
  *
  * Works on the cockpit in DriverView.astro (data-driver-hub, -arm, -sparks,
  * -gear). Loaded on demand by src/scripts/testRun.ts.
@@ -80,25 +81,33 @@ export function repair(reduced: boolean): void {
   gsap.set(sparks, { opacity: 0 });
   gsap.set(layer, { x: 0 });
   if (reduced) {
-    gsap.set([arm, frame], { clearProps: 'transform' });
+    gsap.set([hub, arm, frame], { clearProps: 'transform' });
     tl = gsap.timeline().to(hub, { autoAlpha: 1, duration: 0.3 });
     return;
   }
+  const c = TIMINGS.crash;
+  // Start the wheel from a clean transform. Tweening from the crash's end
+  // state left GSAP's svgOrigin offset behind, and the "refitted" wheel landed
+  // thousands of pixels off-screen.
+  gsap.set(hub, { clearProps: 'transform' });
+  gsap.set(hub, { svgOrigin: TYRE_CENTRE });
   tl = gsap
     .timeline({ defaults: { ease: 'power2.out' } })
+    // Jack up: the dropped corner lifts level.
+    .to(arm, { rotation: 0, svgOrigin: ARM_ROOT, duration: c.jack })
+    .to(frame, { rotation: 0, y: -10, duration: c.jack }, '<')
+    // The wheel rolls in from the left and onto the hub.
     .fromTo(
       hub,
-      { ...AWAY, rotation: 360, autoAlpha: 1, svgOrigin: TYRE_CENTRE },
-      {
-        x: 0,
-        y: 0,
-        scale: 1,
-        rotation: 0,
-        svgOrigin: TYRE_CENTRE,
-        duration: TIMINGS.crash.refit,
-        ease: 'back.out(1.4)',
-      },
+      { x: -520, y: 40, rotation: -540, autoAlpha: 1 },
+      { x: 0, y: 0, rotation: 0, duration: c.refit, ease: 'power3.out' },
+      c.jack * 0.6,
     )
-    .to(arm, { rotation: 0, svgOrigin: ARM_ROOT, duration: 0.3 }, '-=0.15')
-    .to(frame, { rotation: 0, y: 0, duration: 0.35, ease: 'back.out(2)' }, '<');
+    // Wheel gun: a quick spin and a judder as the nut goes tight.
+    .to(hub, { rotation: 360, duration: c.gun, ease: 'power4.out' })
+    .to(hub, { keyframes: { x: [-4, 3, -2, 0] }, duration: c.gun * 0.6, ease: 'none' }, '<')
+    // Jack down: the car drops onto four wheels and settles.
+    .to(frame, { y: 0, duration: c.drop, ease: 'bounce.out' })
+    .to(layer, { keyframes: { y: [0, 4, 0] }, duration: c.drop * 0.6, ease: 'none' }, '<')
+    .set(hub, { rotation: 0 });
 }
