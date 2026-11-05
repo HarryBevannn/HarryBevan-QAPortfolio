@@ -1,13 +1,11 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-// The repo is HarryBevan-QAPortfolio, so GitHub Pages serves the site from
-// https://harrybevannn.github.io/HarryBevan-QAPortfolio/. Every internal URL is
-// built from `base` (withBase() in src/data/site.ts). When the custom domain
-// goes live, change `site` and remove `base` (see README).
+// Served from the custom domain https://harrybevan.uk (public/CNAME), at the
+// root. Internal URLs are still built with withBase() (src/data/site.ts), so a
+// sub-path `base` could come back without hunting for hard-coded paths.
 export default defineConfig({
-  site: 'https://harrybevannn.github.io',
-  base: '/HarryBevan-QAPortfolio',
+  site: 'https://harrybevan.uk',
   output: 'static',
   devToolbar: { enabled: false },
   build: {

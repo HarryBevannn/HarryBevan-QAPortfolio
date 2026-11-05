@@ -16,7 +16,7 @@ export const site = {
   role: 'Lead Quality AI Engineer',
   /** What the site is, shown in the start-screen title and the page title. */
   product: 'Lead Quality AI Engineer Portfolio',
-  url: `https://harrybevannn.github.io${base}`,
+  url: `https://harrybevan.uk${base}`,
   title: 'Harry Bevan | Lead Quality AI Engineer Portfolio',
   description:
     'Harry Bevan is a Lead Quality AI Engineer in Birmingham, UK: 9+ years in quality engineering, Playwright test automation and AI/LLM validation. Take a lap of the circuit.',

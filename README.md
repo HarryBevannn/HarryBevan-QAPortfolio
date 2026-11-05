@@ -31,7 +31,7 @@ The road, the maps and the page react to each other:
 - Section titles wipe in behind a kerb stripe. The big section numbers drift past
   at their own speed, panels tip upright as they rise, and chips pop in.
 
-Live at **https://harrybevannn.github.io/HarryBevan-QAPortfolio/** (custom domain to follow).
+Live at **https://harrybevan.uk**.
 
 > All artwork (car, cockpit, button and circuit) is original. The circuit is
 > loosely inspired by a classic British airfield layout but is not a tracing
@@ -306,13 +306,13 @@ Limitations of the meta-tag approach:
 
 ## Deployment (GitHub Pages via GitHub Actions)
 
-The repo is public and named **`HarryBevan-QAPortfolio`**, so GitHub Pages serves
-the site from a sub-path: https://harrybevannn.github.io/HarryBevan-QAPortfolio/.
-`astro.config.mjs` sets `site` and `base: '/HarryBevan-QAPortfolio'`. Never
-hard-code a root path (`/og.png`): build internal URLs with `withBase()` from
-`src/data/site.ts`. The test server (`tests/support/static-server.ts`) serves
-`dist/` under the same base and redirects other paths into it, so tests can still
-`page.goto('/')`.
+The repo is public and named **`HarryBevan-QAPortfolio`**. The site is served from
+the custom domain **https://harrybevan.uk** (registered at Cloudflare, `public/CNAME`), at
+the root, so `astro.config.mjs` sets `site` and no `base`. The old
+`harrybevannn.github.io/HarryBevan-QAPortfolio/` address redirects to it. Internal URLs
+are still built with `withBase()` from `src/data/site.ts`, and the test server
+(`tests/support/static-server.ts`, `BASE`) mirrors the base, so a sub-path could come
+back without hunting for hard-coded paths.
 
 `.github/workflows/ci.yml` runs on every pull request and every push to `main`:
 

@@ -203,17 +203,18 @@ Gotchas:
 
 ## 7. Deployment
 
-- Public repo `HarryBevan-QAPortfolio` → https://harrybevannn.github.io/HarryBevan-QAPortfolio/
-  (`site` plus `base: '/HarryBevan-QAPortfolio'`). **Never hard-code a root path** like `/og.png`:
-  use `withBase()` from `src/data/site.ts`. The test server serves `dist/` under the same base
-  (`BASE` in `tests/support/static-server.ts`).
+- Public repo `HarryBevan-QAPortfolio` → custom domain **https://harrybevan.uk** (Cloudflare
+  Registrar, `public/CNAME`; DNS records "DNS only"), served at the root: `site` set, no `base`.
+  Still build internal URLs with `withBase()` from `src/data/site.ts` (never hard-code `/og.png`);
+  the test server mirrors the base (`BASE` in `tests/support/static-server.ts`).
 - GitHub Actions: lint, format, build and tests on every PR and every push to main. Deploys to
   Pages **only** on a push to main after every check passes (`pages: write`, `id-token: write`,
   `contents: read`).
 - Pages Source must be "GitHub Actions". No custom headers on Pages, so CSP and referrer
   policy are meta tags (limitations are in the README).
 - Never push on Harry's behalf. Give him the commands.
-- **Custom domain is the very last step** (steps in the README; WHOIS privacy on).
+- Custom domain set up (steps in the README). WHOIS: .uk individuals are redacted by the
+  registry, and Cloudflare redacts its own WHOIS.
 
 ## 8. Status & roadmap
 
@@ -230,7 +231,7 @@ workflow.
 1. Harry checks the Power Automate flow's details (the TODO in `lap.ts`)
 2. Testimonials
 3. Lighthouse scores fed from CI (the Playwright results are live; Lighthouse is hand-updated in `lap.ts`)
-4. Custom domain (last)
+4. (Custom domain: done, harrybevan.uk)
 
 ## 9. Decision log
 
@@ -238,7 +239,8 @@ workflow.
 - **2026-11**: Visitor-operated flip-guard start button (two deliberate steps), not an autoplay intro.
 - **2026-11**: Carbon fibre and blurred cockpit background, all CSS/SVG with no images.
 - **2026-11**: GitHub Pages chosen over Netlify: the site is static and the code can be public.
-- **2026-11**: Custom domain purchase left until the site is finished.
+- **2026-11**: Custom domain purchase left until the site is finished. Then bought:
+  **harrybevan.uk** at Cloudflare Registrar (at-cost renewals, free WHOIS redaction), over GoDaddy.
 - **2026-11**: CSP via Astro's `security.csp` meta tag (hashed, no `'unsafe-inline'`), because Pages
   can't set headers.
 - **2026-11**: Start screen gets a name/role title. The guard became a side-hinged, extruded 3D lid

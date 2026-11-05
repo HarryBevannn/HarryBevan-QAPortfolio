@@ -130,9 +130,7 @@ test.describe('SEO & meta', () => {
     await expect(page).toHaveTitle('Harry Bevan | Lead Quality AI Engineer Portfolio');
     const meta = (sel: string) => page.locator(sel).first().getAttribute('content');
     expect(await meta('meta[name="description"]')).toBeTruthy();
-    expect(await meta('meta[property="og:image"]')).toBe(
-      'https://harrybevannn.github.io/HarryBevan-QAPortfolio/og.png',
-    );
+    expect(await meta('meta[property="og:image"]')).toBe('https://harrybevan.uk/og.png');
     expect(await meta('meta[name="twitter:card"]')).toBe('summary_large_image');
     expect(await meta('meta[name="referrer"]')).toBe('strict-origin-when-cross-origin');
     const csp = await meta('meta[http-equiv="content-security-policy"]');
@@ -140,7 +138,7 @@ test.describe('SEO & meta', () => {
     expect(csp).not.toContain('unsafe-inline');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
       'href',
-      'https://harrybevannn.github.io/HarryBevan-QAPortfolio/',
+      'https://harrybevan.uk/',
     );
   });
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://harrybevannn.github.io/HarryBevan-QAPortfolio/sitemap.xml
+Sitemap: https://harrybevan.uk/sitemap.xml

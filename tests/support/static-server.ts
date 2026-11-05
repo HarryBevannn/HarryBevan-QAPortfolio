@@ -1,9 +1,9 @@
 /**
  * Minimal static server for dist/, run inside Playwright's global setup.
- * Behaves like GitHub Pages for a project repo: serves dist/ under the site's
- * base path (/HarryBevan-QAPortfolio/), maps directories to index.html and
- * falls back to 404.html. Paths outside the base redirect into it, so tests
- * can keep using page.goto('/'). In-process (no child server to kill), so test runs always
+ * Behaves like GitHub Pages: serves dist/ under the site's base path (the root,
+ * now the site is on its custom domain), maps directories to index.html and
+ * falls back to 404.html. If `base` ever comes back, set BASE to match: paths
+ * outside it redirect into it, so tests can keep using page.goto('/'). In-process (no child server to kill), so test runs always
  * exit promptly on every OS.
  */
 import { createServer, type Server } from 'node:http';
@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../../dist/', import.meta.url));
 
 /** Must match `base` in astro.config.mjs. */
-export const BASE = '/HarryBevan-QAPortfolio/';
+export const BASE = '/';
 
 const types: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
