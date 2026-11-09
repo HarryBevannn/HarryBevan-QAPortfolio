@@ -8,8 +8,10 @@
  *   - "Run live checks" runs real assertions in the visitor's browser
  *     (src/scripts/liveChecks.ts).
  *   - "View tests" under Passed, Failed and Skipped lists every test with
- *     that outcome in the console, straight away (no replay). Visual tests
- *     get a "Screenshots" button that opens their images in a dialog.
+ *     that outcome in the console, straight away (no replay), and scrolls the
+ *     console into view. Failed and Skipped only offer the link if the run
+ *     has such tests. Visual tests get a "Screenshots" button that opens
+ *     their images in a dialog.
  *   - "Break it" knocks the front-left wheel off (src/animations/crash.ts)
  *     and plants real bugs (./breakIt.ts) for the live checks to catch;
  *     "Fix it" undoes both.
@@ -259,6 +261,9 @@ export function initTestRun(root: HTMLElement): void {
       if (ui.scroll) {
         ui.scroll.scrollTop = 0;
         ui.scroll.focus({ preventScroll: true });
+        // Only as far as needed to show the whole box. Smooth or instant comes
+        // from the page's CSS, and scroll-padding clears the mobile windscreen.
+        ui.scroll.scrollIntoView({ block: 'nearest' });
       }
       pressView(button.dataset.testRunView);
       announce(`Showing ${tests.length} ${view.word} ${tests.length === 1 ? 'test' : 'tests'}.`);
@@ -383,6 +388,11 @@ export function initTestRun(root: HTMLElement): void {
     }
     if (ui.replay) ui.replay.disabled = false;
     enableViews(true);
+    // Failed and Skipped only offer the link when there is something to list.
+    for (const key of ['failed', 'skipped'] as const) {
+      const view = views.find((v) => v.dataset.testRunView === key);
+      view?.parentElement?.toggleAttribute('data-empty', r.totals[key] === 0);
+    }
   };
 
   // Fetch only when the section is getting close.

@@ -132,8 +132,9 @@ npm run generate:assets  # og.png, apple-touch-icon.png
 - `src/lib/testResults.ts`: the `/test-results.json` format. `tests/support/results-reporter.ts`
   (custom Playwright reporter) writes it to `dist/`; `src/scripts/testRun.ts` loads and replays it;
   `src/scripts/liveChecks.ts` holds the in-browser checks behind "Run live checks". "View tests"
-  under Passed / Failed / Skipped lists that outcome's tests from the same JSON (Passed includes
-  flaky); visual tests there get a "Screenshots" dialog
+  under Passed / Failed / Skipped lists that outcome's tests from the same JSON and scrolls the
+  list into view (Passed includes flaky; Failed's and Skipped's links only show if the run has such tests); visual tests
+  there get a "Screenshots" dialog
 - `src/scripts/breakIt.ts` (the bugs "Break it" plants and undoes) and `src/animations/crash.ts`
   (the wheel coming off, timings in `TIMINGS.crash`); cockpit hooks `data-driver-hub`,
   `-arm`, `-sparks`, `-gear` in DriverView
@@ -223,7 +224,7 @@ with placeholder sections, mobile mini-map, reduced-motion and no-JS paths, CSP,
 OG meta, synthesised sound (on by default), tyre-smoke launch, real content, race-track styling with live HUD, data-testid on every control, live test results section (CI replay + in-browser checks),
 interactive track (clickable markers, sector splits) and scroll effects, first-person lap
 (canvas road, gantries, steering wheel, mini-maps, pull-up to the top-down finish map), tests
-(113 passing + 13 skips: 1 desktop-only, 1 mobile-only, 3 engine-model unit tests that run once), CI and deploy
+(117 passing + 13 skips: 1 desktop-only, 1 mobile-only, 3 engine-model unit tests that run once), CI and deploy
 workflow.
 
 **Next:**

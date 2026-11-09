@@ -113,10 +113,63 @@ test.describe('Telemetry: live test results', () => {
     await expect(skipped).toHaveAttribute('aria-pressed', 'false');
     await expect(output.locator('[data-status]')).toHaveCount(2);
     await expect(output.locator('[data-status="flaky"]')).toHaveCount(1);
+  });
 
-    await page.getByTestId('test-run-view-failed').click();
-    await expect(output.locator('[data-status]')).toHaveCount(0);
-    await expect(output).toContainText('No tests failed in this run.');
+  test('failed and skipped links only show when the run has such tests', async ({ page }) => {
+    let run = fixture;
+    await page.route('**/test-results.json', (route) => route.fulfill({ json: run }));
+    await driveToTelemetry(page);
+    await expect(page.getByTestId('test-run-view-passed')).toBeEnabled();
+    await expect(page.locator('[data-total="failed"]')).toHaveText('0');
+    await expect(page.getByTestId('test-run-view-failed')).toBeHidden();
+    await expect(page.getByTestId('test-run-view-skipped')).toBeVisible();
+
+    run = {
+      ...fixture,
+      tests: [
+        ...fixture.tests.filter((t) => t.status !== 'skipped'),
+        { ...fixture.tests[0]!, title: 'a broken test', status: 'failed' },
+      ],
+    };
+    await page.reload(); // the intro is remembered for the session
+    await expectStage(page, 'track');
+    await page.locator('#telemetry').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-total="failed"]')).toHaveText('1');
+    await expect(page.locator('[data-total="skipped"]')).toHaveText('0');
+    await expect(page.getByTestId('test-run-view-skipped')).toBeHidden();
+    const failed = page.getByTestId('test-run-view-failed');
+    await expect(failed).toBeEnabled();
+    await failed.click();
+    await expect(page.getByTestId('test-console').locator('[data-status]')).toHaveCount(1);
+    await expect(page.getByTestId('test-console')).toContainText('a broken test');
+  });
+
+  test('viewing tests scrolls the whole results box into view', async ({ page }) => {
+    await page.route('**/test-results.json', (route) => route.fulfill({ json: fixture }));
+    await driveToTelemetry(page);
+    const view = page.getByTestId('test-run-view-passed');
+    const output = page.getByTestId('test-console');
+    await expect(view).toBeEnabled();
+
+    // Leave the link at the very bottom of the screen, with the box below the fold.
+    await view.evaluate((el) => {
+      const top = el.getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 8;
+      window.scrollTo({ top, behavior: 'instant' });
+    });
+    await expect(output).not.toBeInViewport({ ratio: 1 });
+
+    await view.click();
+    // Clear of the mobile windscreen band too, which covers the top of the viewport.
+    await expect
+      .poll(() =>
+        output.evaluate((el) => {
+          const box = el.getBoundingClientRect();
+          const pad = parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) || 0;
+          return box.top >= pad && box.bottom <= window.innerHeight;
+        }),
+      )
+      .toBe(true);
+    await expect(output).toBeFocused();
   });
 
   test('live checks pass in the browser against the real page', async ({ page }) => {
@@ -138,6 +191,8 @@ test.describe('Telemetry: live test results', () => {
     );
     await expect(page.getByTestId('test-run-replay')).toBeDisabled();
     await expect(page.getByTestId('test-run-view-passed')).toBeDisabled();
+    await expect(page.getByTestId('test-run-view-failed')).toBeHidden();
+    await expect(page.getByTestId('test-run-view-skipped')).toBeHidden();
     await expect(page.getByTestId('test-run-live')).toBeEnabled();
   });
 

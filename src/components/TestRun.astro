@@ -44,8 +44,9 @@ const totals = [
           –
         </dd>
         {t.list && (
-          <dd class="test-run__view-wrap">
-            {/* Lists every test with this outcome in the console below. */}
+          <dd class="test-run__view-wrap" data-empty={t.key === 'passed' ? undefined : ''}>
+            {/* Lists every test with this outcome in the console below. Failed and Skipped
+                are revealed by testRun.ts only when the run has such tests. */}
             <button
               type="button"
               class="test-run__view"
@@ -288,6 +289,11 @@ const totals = [
     margin: var(--space-1) 0 0;
   }
 
+  /* Invisible but still taking its line, so the page doesn't move when results load. */
+  .test-run__view-wrap[data-empty] {
+    visibility: hidden;
+  }
+
   .test-run__view {
     padding: var(--space-1) 0;
     border: 0;
@@ -439,6 +445,7 @@ const totals = [
     margin: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
+    scroll-margin-block: var(--space-4);
     border: 1px solid var(--color-carbon-500);
     border-radius: var(--radius-sm);
     background: rgb(5 7 9 / 90%);

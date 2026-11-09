@@ -219,8 +219,9 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
 - The **Telemetry** section (`src/components/TestRun.astro`, `src/scripts/testRun.ts`)
   loads that JSON, shows the totals, commit and a link to the Actions run, and can
   **replay the run** line by line. **View tests** under Passed, Failed and Skipped lists
-  every test with that outcome straight away (Passed includes flaky tests, which passed
-  on a retry). Playwright can't run inside a web page, so **Run live
+  every test with that outcome straight away and scrolls the list into view (Passed
+  includes flaky tests, which passed on a retry; Failed and Skipped only have the link
+  when the run has such tests). Playwright can't run inside a web page, so **Run live
   checks** (`src/scripts/liveChecks.ts`) runs ten real assertions in the visitor's
   browser instead: test ids present and unique, accessible names, focus order, heading
   levels, CSP, no personal contact details, safe external links, sound-toggle state and
