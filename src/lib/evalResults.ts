@@ -22,6 +22,13 @@ export interface EvalCheck {
   pass: boolean;
 }
 
+/** An LLM judge's marks for one answer, out of 100 (evals/judge.ts). */
+export interface EvalJudgement {
+  score: number;
+  parts: { label: string; score: number; max: number }[];
+  reason: string;
+}
+
 export interface EvalCase {
   id: string;
   category: EvalCategory;
@@ -31,6 +38,7 @@ export interface EvalCase {
   /** 'missing': no answer was recorded for this question, so it isn't scored. */
   status: 'passed' | 'failed' | 'missing';
   checks: EvalCheck[];
+  judge?: EvalJudgement;
 }
 
 export interface EvalResultsSummary {
@@ -40,7 +48,20 @@ export interface EvalResultsSummary {
   recordedAt: string;
   /** How the answers were produced, in a sentence or two. */
   method: string;
+  /** The model that marked the answers. */
+  judgedBy?: string;
+  /** When they were marked (YYYY-MM-DD). */
+  judgedAt?: string;
+  /** How the marks were produced, in a sentence or two. */
+  judgeMethod?: string;
   cases: EvalCase[];
+}
+
+/** The mean judge score across judged answers, or undefined if none were judged. */
+export function averageJudgeScore(cases: EvalCase[]): number | undefined {
+  const scores = cases.flatMap((c) => (c.judge ? [c.judge.score] : []));
+  if (scores.length === 0) return undefined;
+  return Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length);
 }
 
 export interface CategoryScore {

@@ -32,11 +32,24 @@ const { resultsUrl } = Astro.props;
   </div>
 
   <div class="evals__board js-only" data-evals-board hidden>
-    <p class="evals__overall">
-      <span class="evals__overall-value mono" data-evals-overall>
-        –
-      </span>
-      <span class="evals__overall-label">of eval questions passed</span>
+    <div class="evals__overalls">
+      <p class="evals__overall">
+        <span class="evals__overall-value mono" data-evals-overall>
+          –
+        </span>
+        <span class="evals__overall-label">of eval questions passed</span>
+      </p>
+      <p class="evals__overall" data-evals-judge hidden>
+        <span class="evals__overall-value mono" data-evals-judge-overall>
+          –
+        </span>
+        <span class="evals__overall-label">average LLM judge score</span>
+      </p>
+    </div>
+    <p class="evals__note" data-evals-judge-note hidden>
+      Each answer was then independently marked out of 100 by a different model, against a fixed
+      rubric: accuracy, following its rules, helpfulness and clarity. The judge had no part in
+      writing the answers and saw only this page, the questions and the replies.
     </p>
     <ul class="evals__scores" data-evals-scores></ul>
     <details class="evals__all">
@@ -107,10 +120,25 @@ const { resultsUrl } = Astro.props;
     display: none;
   }
 
+  .evals__overalls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3) var(--space-6);
+  }
+
   .evals__overall {
     display: flex;
     align-items: baseline;
     gap: var(--space-3);
+  }
+
+  .evals__overall[hidden] {
+    display: none;
+  }
+
+  .evals__note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
   }
 
   .evals__overall-value {
@@ -190,11 +218,19 @@ const { resultsUrl } = Astro.props;
 
   .evals__cases :global(summary) {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto 1fr auto;
     gap: var(--space-1) var(--space-3);
     padding: var(--space-3) var(--space-4);
     cursor: pointer;
     font-size: var(--text-sm);
+  }
+
+  .evals__cases :global(.evals__judge) {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--color-white);
+    white-space: nowrap;
   }
 
   .evals__cases :global(.evals__icon) {
@@ -252,6 +288,21 @@ const { resultsUrl } = Astro.props;
 
   .evals__cases :global(.evals__checks .is-fail) {
     color: var(--color-red-bright);
+  }
+
+  .evals__cases :global(.evals__marks) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+  }
+
+  .evals__cases :global(.evals__reason) {
+    color: var(--color-text-muted);
   }
 
   .evals__links {

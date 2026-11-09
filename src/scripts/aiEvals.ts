@@ -7,6 +7,7 @@
  * Answers are model output, so they're only ever set as text, never HTML.
  */
 import {
+  averageJudgeScore,
   CATEGORY_LABEL,
   scoreByCategory,
   type EvalCase,
@@ -33,11 +34,13 @@ function caseRow(c: EvalCase): HTMLDetailsElement {
   summary.dataset.testid = `eval-case-${c.id}`;
   const icon = el('span', 'evals__icon', ICON[c.status]);
   icon.setAttribute('aria-label', c.status);
-  summary.append(
-    icon,
-    el('span', 'evals__question', c.question),
-    el('span', 'evals__category', CATEGORY_LABEL[c.category]),
-  );
+  summary.append(icon, el('span', 'evals__question', c.question));
+  if (c.judge) {
+    const chip = el('span', 'evals__judge');
+    chip.append(el('span', 'sr-only', 'LLM judge score: '), `${c.judge.score}/100`);
+    summary.append(chip);
+  }
+  summary.append(el('span', 'evals__category', CATEGORY_LABEL[c.category]));
 
   const detail = el('div', 'evals__detail');
   detail.append(el('p', 'evals__label', 'Assistant’s answer'));
@@ -61,6 +64,14 @@ function caseRow(c: EvalCase): HTMLDetailsElement {
     }
     detail.append(list);
   }
+  if (c.judge) {
+    detail.append(el('p', 'evals__label', `LLM judge: ${c.judge.score}/100`));
+    const marks = el('ul', 'evals__marks');
+    for (const part of c.judge.parts) {
+      marks.append(el('li', undefined, `${part.label} ${part.score}/${part.max}`));
+    }
+    detail.append(marks, el('p', 'evals__reason', c.judge.reason));
+  }
   details.append(summary, detail);
   return details;
 }
@@ -83,10 +94,18 @@ export function initAiEvals(root: HTMLElement): void {
     const scored = r.cases.filter((c) => c.status !== 'missing');
     const passed = scored.filter((c) => c.status === 'passed').length;
     if (meta) {
-      meta.textContent = `Recorded run · answered by ${r.answeredBy} · ${when} · scored by the suite`;
-      meta.title = r.method;
+      const judged = r.judgedBy ? ` · judged by ${r.judgedBy}` : '';
+      meta.textContent = `Recorded run · answered by ${r.answeredBy} · ${when} · scored by the suite${judged}`;
+      meta.title = [r.method, r.judgeMethod].filter(Boolean).join(' ');
     }
     q('[data-evals-overall]')!.textContent = `${passed}/${scored.length}`;
+
+    const average = averageJudgeScore(r.cases);
+    if (average !== undefined) {
+      q('[data-evals-judge-overall]')!.textContent = `${average}/100`;
+      q('[data-evals-judge]')!.hidden = false;
+      q('[data-evals-judge-note]')!.hidden = false;
+    }
 
     const scores = scoreByCategory(r.cases).filter((s) => s.scored > 0);
     q('[data-evals-scores]')!.replaceChildren(

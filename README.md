@@ -251,6 +251,13 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
     there are no API keys, costs or rate limits. The answers in `evals/answers.json`
     were recorded once by Claude Opus 5.5 playing the assistant, with the system prompt
     in `evals/assistant.ts`, and the scorecard says so.
+  - **LLM judge**: each answer also gets a mark out of 100 against the rubric and prompt in
+    `evals/judge.ts` (accuracy 40, follows its rules 30, helpfulness 20, clarity 10). The
+    marks are recorded in `evals/judgements.json`, and code adds them up. The judge is a
+    different model from the assistant (Claude Fable 5.1, against Claude Opus 5.5), given
+    only the page text, the questions and the replies. Each verdict stores
+    the answer it marked, so a changed answer loses its marks and fails the tests until
+    it's judged again.
   - `npm run evals` scores them and writes `public/eval-results.json` (commit it). A test
     re-scores the answers on every run and fails if the published scorecard doesn't
     match, so it can't drift from the suite.

@@ -141,7 +141,9 @@ npm run generate:assets  # og.png, apple-touch-icon.png
 - `evals/`: the **AI evals scorecard** (recorded, not live: Harry's call). `assistant.ts` (the
   Pit wall assistant's system prompt, built from dist/index.html's visible text, with a canary
   and refusal phrases), `cases.ts` (the 16 questions and their checks; edit here),
-  `answers.json` (answers recorded once by Claude Opus 5.5 playing the assistant), `score.ts`
+  `answers.json` (answers recorded once by Claude Opus 5.5 playing the assistant),
+  `judge.ts` + `judgements.json` (recorded LLM judge marks out of 100; each verdict stores the
+  answer it marked, so re-judge any answer you change), `score.ts`
   - `run.ts` (`npm run evals` writes `public/eval-results.json`; commit it). Format in
     `src/lib/evalResults.ts`; UI in `src/components/AiEvals.astro` + `src/scripts/aiEvals.ts`.
     `tests/evals.spec.ts` re-scores the answers and fails if the published file doesn't match.
@@ -224,7 +226,7 @@ with placeholder sections, mobile mini-map, reduced-motion and no-JS paths, CSP,
 OG meta, synthesised sound (on by default), tyre-smoke launch, real content, race-track styling with live HUD, data-testid on every control, live test results section (CI replay + in-browser checks),
 interactive track (clickable markers, sector splits) and scroll effects, first-person lap
 (canvas road, gantries, steering wheel, mini-maps, pull-up to the top-down finish map), tests
-(117 passing + 13 skips: 1 desktop-only, 1 mobile-only, 3 engine-model unit tests that run once), CI and deploy
+(119 passing + 15 skips: 1 desktop-only, 1 mobile-only, 3 engine-model unit tests that run once), CI and deploy
 workflow.
 
 **Next:**
@@ -300,6 +302,11 @@ workflow.
   Harry chose **recorded** instead: Claude Opus 5.5 played the assistant once, the answers are
   committed, and code scores them (a test re-scores on every run). No keys, costs or limits; the
   site labels it as a recorded run.
+- **2026-11**: LLM judge added to the AI evals (Harry's request): each recorded answer also gets a
+  recorded mark out of 100. Claude Opus 5.5 answers and **Claude Fable 5.1 judges**, seeing only the
+  page text, questions and replies, so the site can say "independently marked by a different
+  model". Keep that wording true: if answers change, re-judge them with a model other than the one
+  that answered.
 - **2026-11**: Two show-off features (Harry's picks): **Break it** in Telemetry knocks the
   front-left wheel off and plants three real bugs for the live checks to catch and name; **Fix
   it** repairs both. And **visual regression** with Playwright screenshots, published with the

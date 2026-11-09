@@ -12,7 +12,7 @@
  * a case or an answer, and commit public/eval-results.json.
  */
 import { writeFileSync } from 'node:fs';
-import { scoreByCategory } from '../src/lib/evalResults.ts';
+import { averageJudgeScore, scoreByCategory } from '../src/lib/evalResults.ts';
 import { readAnswers, scoreRecorded } from './score.ts';
 
 const summary = scoreRecorded(readAnswers());
@@ -28,5 +28,9 @@ for (const s of scoreByCategory(summary.cases)) {
 for (const c of summary.cases.filter((x) => x.status !== 'passed')) {
   const why = c.checks.filter((k) => !k.pass).map((k) => k.name);
   console.log(`  ✘ ${c.id}: ${why.join('; ') || 'no recorded answer'}`);
+}
+console.log(`  LLM judge average: ${averageJudgeScore(summary.cases) ?? 'none'}/100`);
+for (const c of summary.cases.filter((x) => x.status !== 'missing' && !x.judge)) {
+  console.log(`  ✘ ${c.id}: no judge verdict for this exact answer`);
 }
 console.log('Wrote public/eval-results.json');
