@@ -127,11 +127,11 @@ export const lap: LapSectionData[] = [
         type: 'test-run',
         resultsUrl: withBase('test-results.json'),
         ciUrl: `${site.links.repo}/actions`,
-        auditNote: 'Lighthouse, measured on the production build, 4 Nov 2026.',
+        auditNote: 'Lighthouse, measured on the production build, 9 Nov 2026.',
         audits: [
           { label: 'Performance', value: '96', detail: 'mobile' },
           { label: 'Accessibility', value: '100', detail: 'Lighthouse' },
-          { label: 'Best practices', value: '96', detail: 'Lighthouse' },
+          { label: 'Best practices', value: '100', detail: 'Lighthouse' },
           { label: 'SEO', value: '100', detail: 'Lighthouse' },
         ],
       },

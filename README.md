@@ -205,8 +205,7 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
   `hero-scroll-cue`, `hero-contact`, `sector-link-<section>`, `track-marker-<section>`,
   `case-link-<label>`, `test-run-replay`, `test-run-live`, `test-run-break`,
   `test-run-view-<outcome>`, `test-shots-<project>-<test>`, `test-shots-close`, `test-run-ci`,
-  `test-results-json`, `contact-<label>`, `footer-github`,
-  `back-to-start`. `tests/test-run.spec.ts` fails if any control on `/` or the
+  `test-results-json`, `contact-<label>`, `back-to-start`. `tests/test-run.spec.ts` fails if any control on `/` or the
   404 page is missing one, or if two share an id. Tests locate controls by test id
   (`tests/helpers.ts`), and `accessibility.spec.ts` separately asserts their accessible
   names, so a11y is still covered.
@@ -264,16 +263,13 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
 
 ## Performance
 
-Measured locally with Lighthouse 12 on the production build:
+Measured locally with Lighthouse 12 on the production build (9 Nov 2026, median of
+three runs):
 
 |         | Performance | Accessibility | Best practices | SEO |
 | ------- | ----------- | ------------- | -------------- | --- |
-| Mobile  | 96          | 100           | 96             | 100 |
+| Mobile  | 96          | 100           | 100            | 100 |
 | Desktop | 99          | 100           | 100            | 100 |
-
-Mobile best practices loses a few points for "legible font sizes", because
-Lighthouse reads the tiny SVG units on the decorative bezel lettering. That
-lettering is `aria-hidden` ornament.
 
 - Inline SVG for all artwork: no images in the critical path, no WebGL. The
   first-person road is a plain 2D canvas, redrawn only when the car moves (at most

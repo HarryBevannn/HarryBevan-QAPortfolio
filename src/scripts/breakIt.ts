@@ -17,12 +17,12 @@ const one = (sel: string) => document.querySelector<HTMLElement>(sel);
 const plants: (() => Bug | null)[] = [
   // A control loses its test id: the tests can no longer find it.
   () => {
-    const el = one('[data-testid="footer-github"]');
+    const el = one('[data-testid="test-results-json"]');
     if (!el) return null;
     el.removeAttribute('data-testid');
     return {
-      label: 'the GitHub link lost its data-testid',
-      undo: () => el.setAttribute('data-testid', 'footer-github'),
+      label: 'the raw results link lost its data-testid',
+      undo: () => el.setAttribute('data-testid', 'test-results-json'),
     };
   },
   // Two controls share a test id: a test could press the wrong one.

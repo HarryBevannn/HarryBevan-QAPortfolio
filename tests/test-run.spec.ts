@@ -278,7 +278,7 @@ test.describe('Break it', () => {
     await runFinished(page, '7 passed, 3 failed in your browser');
     const failures = output.locator('[data-status="failed"]');
     await expect(failures).toHaveCount(3);
-    await expect(failures.nth(0)).toContainText('missing on: “GitHub”');
+    await expect(failures.nth(0)).toContainText('missing on: “Raw results (JSON)”');
     await expect(failures.nth(1)).toContainText('duplicated: hero-scroll-cue');
     await expect(failures.nth(2)).toContainText('h2 → h5');
     await expect(output).toContainText('Caught the planted bugs');
@@ -296,7 +296,7 @@ test.describe('Break it', () => {
         return Math.max(Math.abs(now.x - fitted.x), Math.abs(now.y - fitted.y));
       })
       .toBeLessThan(10);
-    await expect(page.getByTestId('footer-github')).toHaveCount(1);
+    await expect(page.getByTestId('test-results-json')).toHaveCount(1);
     await expect(page.locator('#automation h3')).not.toHaveCount(0);
     await expect(page.locator('#automation h5')).toHaveCount(0);
     await page.getByTestId('test-run-live').click();
