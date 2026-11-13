@@ -21,6 +21,7 @@
  *   [data-driver-hub]     the mount round each tyre ("left"/"right"): "Break it"
  *                         (src/animations/crash.ts) throws the left one off
  *   [data-driver-gear]    the gear display ("!" while the car is broken)
+ *   [data-driver-speed]   the speed on the wheel's display (mph, from scroll velocity)
  *   [data-driver-sparks]  sparks from the crash, hidden until then
  *                         (data-cx/data-cy: the point they turn about)
  *   [data-driver-led]     rev LEDs, lit with scroll speed
@@ -322,8 +323,16 @@ const mirror = (x: number) => 1600 - x;
         <path d="M506 820 h30 M1094 820 h-30" stroke={C.red} stroke-width="8"></path>
         <!-- Display -->
         <rect x="705" y="780" width="190" height="78" rx="8" fill="#050607" stroke="#3a3d43"></rect>
-        <text x="800" y="836" class="driver__gear" text-anchor="middle" data-driver-gear>
+        <text x="748" y="840" class="driver__gear" text-anchor="middle" data-driver-gear>
           7
+        </text>
+        <!-- Speed from scroll velocity (lap.ts), with its unit underneath -->
+        <path d="M790 804 v44" stroke="#3a3d43" stroke-width="2"></path>
+        <text x="840" y="834" class="driver__speed" text-anchor="middle" data-driver-speed>
+          0
+        </text>
+        <text x="840" y="851" class="driver__unit" text-anchor="middle">
+          MPH
         </text>
         <rect x="716" y="790" width="40" height="6" rx="2" fill={C.green}></rect>
         <rect x="844" y="790" width="40" height="6" rx="2" fill={C.amber}></rect>
@@ -430,6 +439,24 @@ const mirror = (x: number) => 1600 - x;
     height: 100%;
     max-width: none;
     overflow: visible;
+  }
+
+  .driver__speed,
+  .driver__unit {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .driver__speed {
+    font-size: 32px;
+    fill: var(--color-accent);
+  }
+
+  .driver__unit {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    fill: var(--color-grey-300);
   }
 
   .driver__gear {

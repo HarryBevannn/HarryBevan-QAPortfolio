@@ -1,12 +1,12 @@
 ---
 /**
  * PitWall: the desktop dash panel pinned beside the windscreen. A live
- * telemetry strip on top (sector, speed from scroll velocity, lap %), the
+ * telemetry strip on top (sector and lap %; the speed is on the steering wheel), the
  * mini-map of the circuit, and a sector nav that jumps to each section.
  * Mobile uses the pinned MiniMap bar instead, so this is desktop only.
  *
  * Hooks for src/animations/lap.ts:
- *   [data-hud-sector] [data-hud-speed] [data-hud-progress] [data-hud-bar]
+ *   [data-hud-sector] [data-hud-progress] [data-hud-bar]
  *   [data-sector-link=id] gets aria-current="location" when active
  */
 import MiniMap from './MiniMap.astro';
@@ -22,12 +22,6 @@ import { lap } from '../data/lap';
       <span class="pitwall__label">Sector</span>
       <span class="pitwall__value" data-hud-sector>
         {lap[0]?.sector}
-      </span>
-    </div>
-    <div class="pitwall__reading">
-      <span class="pitwall__label">Speed</span>
-      <span class="pitwall__value mono">
-        <span data-hud-speed>0</span> mph
       </span>
     </div>
     <div class="pitwall__reading">
@@ -69,7 +63,7 @@ import { lap } from '../data/lap';
 
   .pitwall__hud {
     display: grid;
-    grid-template-columns: auto 1fr auto auto;
+    grid-template-columns: auto 1fr auto;
     gap: var(--space-4);
     align-items: end;
     padding: var(--space-1) var(--space-2) var(--space-3);

@@ -72,7 +72,8 @@ export function initLap(reduced: boolean): LapControls | null {
     $<HTMLElement>('[data-hud-progress]'),
     $<HTMLElement>('[data-mini-progress]'),
   ];
-  const speedText = [$<HTMLElement>('[data-hud-speed]'), $<HTMLElement>('[data-mini-speed]')];
+  // The speed reads on the steering wheel's display (and on the mobile bar, where the wheel is tiny).
+  const speedText = [$<HTMLElement>('[data-driver-speed]'), $<HTMLElement>('[data-mini-speed]')];
   const lapTime = $<HTMLElement>('[data-lap-time]');
   const lapStart = performance.now();
   let lapDone = false;

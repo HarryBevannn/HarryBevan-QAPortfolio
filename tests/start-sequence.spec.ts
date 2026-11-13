@@ -441,6 +441,22 @@ test.describe('Lap extras', () => {
     await expect(page.locator('#automation')).toHaveClass(/is-in/);
   });
 
+  test('the speed reads on the steering wheel, not the pit wall, and rises with scrolling', async ({
+    page,
+  }) => {
+    const speed = page.locator('[data-driver-speed]');
+    await expect(speed).toHaveText('0');
+    await expect(page.locator('[data-pitwall]')).not.toContainText('mph');
+    await expect(page.locator('[data-hud-speed]')).toHaveCount(0);
+    // Keep scrolling until the readout shows a speed.
+    await expect
+      .poll(async () => {
+        await page.evaluate(() => window.scrollBy(0, 240));
+        return Number(await speed.textContent());
+      })
+      .toBeGreaterThan(0);
+  });
+
   test('desktop sector nav marks the current section', async ({ page, isMobile }) => {
     test.skip(isMobile, 'The sector nav is desktop-only; mobile uses the mini-map.');
     const link = page.getByTestId('sector-link-test-design');
