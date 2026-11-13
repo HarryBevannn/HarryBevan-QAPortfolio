@@ -51,6 +51,8 @@ export type Block =
   | { type: 'ai-evals'; resultsUrl: string }
   /** Requirement → analysis → test cases → coverage (data in ./testDesign.ts). */
   | { type: 'test-design' }
+  /** The /ship workflow: plan, build, test, verify, deploy (data in ./workflow.ts). */
+  | { type: 'workflow' }
   | { type: 'chips'; label: string; items: string[] }
   | { type: 'quotes'; items: { quote: string; attribution: string }[] }
   /** Chequered-flag banner with the visitor's lap time (set by lap.ts). */
@@ -86,7 +88,7 @@ export const lap: LapSectionData[] = [
     hero: true,
     title: site.name,
     intro:
-      'Nine years in quality engineering, from regression testing core banking systems to leading quality for AI products. I’d rather show the work than list it, so this site is built the way I build software: specified, automated and tested on every change. Take a lap: first the site’s own test results and AI evals, then how I design tests and automate the admin.',
+      'Nine years in quality engineering, from regression testing core banking systems to leading quality for AI products. I’d rather show the work than list it, so this site is built the way I build software: specified, automated and tested on every change. Take a lap: first the site’s own test results and AI evals, then how I design tests, and the AI workflow that ships every change.',
     blocks: [
       {
         type: 'chips',
@@ -153,56 +155,16 @@ export const lap: LapSectionData[] = [
     blocks: [{ type: 'test-design' }],
   },
 
-  // d) Back straight: automation, a Power Automate flow built with AI
+  // d) Back straight: the Claude Code workflow that takes a change from request to deploy
   {
     id: 'automation',
     waypoint: 'back-straight',
     sector: 'Back straight',
-    title: 'Admin that files itself',
+    title: 'Plan to deploy, hands-free',
+    // TODO(Harry): check this section reads the way you'd describe the workflow yourself
     intro:
-      'A Power Automate flow, built with AI, that moves tasks from one system onto the board I actually work from, without copying anything by hand.',
-    blocks: [
-      {
-        type: 'cases',
-        items: [
-          // TODO: Harry to confirm the flow's details match what he built
-          {
-            kicker: 'Automation · Power Automate + AI',
-            title: 'From inbox to task board, untouched',
-            problem:
-              'Tasks raised in one system arrived as emails in my inbox, and I copied each one by hand onto the task board I built to plan my work. Slow, easy to miss, and the details drifted.',
-            approach:
-              'I described the flow in plain English and used AI to draft it in Power Automate, then reviewed and hardened it like any other code: one step at a time, tested with sample emails for every case I could think of.',
-            outcome:
-              'Every task lands on one board with its details and a link back to where it came from, and the inbox only holds what still needs me.',
-            tags: ['Power Automate', 'AI-assisted build', 'Workflow automation', 'Testing'],
-            steps: [
-              { label: 'Trigger', detail: 'A task notification email arrives in my inbox.' },
-              {
-                label: 'Filter',
-                detail:
-                  'Only emails from the source system go further, matched by sender and subject.',
-              },
-              {
-                label: 'Extract',
-                detail:
-                  'The title, due date, priority and a link to the original task are pulled out.',
-              },
-              {
-                label: 'Check',
-                detail:
-                  'If a card with that link is already on the board, the flow stops: no duplicates.',
-              },
-              {
-                label: 'Create',
-                detail: 'A new card goes onto my task board with the details filled in.',
-              },
-              { label: 'Tidy', detail: 'The email is filed away.' },
-            ],
-          },
-        ],
-      },
-    ],
+      'How a change to this site ships. I describe it once; a Claude Code workflow plans it, builds it, tests it and has a second agent verify it, then stops at the one step that can’t be undone and waits for me. It’s how I’d want any team to use AI agents: fast between the gates, and never trusted to mark their own work.',
+    blocks: [{ type: 'workflow' }],
   },
 
   // e) Chequered flag: contact

@@ -2,20 +2,50 @@
 /**
  * TestDesign: the "From requirement to test cases" demo, in four stages:
  * requirement, analysis, test cases and coverage (data in
- * src/data/testDesign.ts). Plain semantic HTML; when the column is narrow
- * (phones, and the desktop text column) the tables reflow into one card per
- * row, each cell labelled from data-label.
+ * src/data/testDesign.ts).
+ *
+ * With JavaScript the stages are tabs (src/scripts/tabs.ts), one on screen at
+ * a time, so the section is one screen tall instead of four. Without it they
+ * are four plain panels, one after another. When the column is narrow (phones)
+ * the tables reflow into one card per row, each cell labelled from data-label.
  */
 import { analysis, coverage, criteria, story, testCases } from '../data/testDesign';
 
 const automated = testCases.filter((t) => t.automatedBy.length > 0).length;
 const p1 = testCases.filter((t) => t.priority === 'P1').length;
 const covered = coverage.filter((c) => c.tests.length > 0).length;
+
+const stages = [
+  { id: 'requirement', label: 'Requirement' },
+  { id: 'analysis', label: 'Analysis' },
+  { id: 'cases', label: 'Test cases' },
+  { id: 'coverage', label: 'Coverage' },
+];
 ---
 
-<div class="td">
-  <ol class="td__stages">
-    <li class="td__stage panel" data-reveal>
+<div class="td" data-tabs>
+  {/* Shown once tabs.ts has wired it up; without JS every stage is on the page. */}
+  <div class="td__tabs" role="tablist" aria-label="Test design stages" data-reveal>
+    {stages.map((stage, i) => (
+      <button
+        type="button"
+        role="tab"
+        class="td__tab"
+        id={`td-tab-${stage.id}`}
+        aria-controls={`td-stage-${stage.id}`}
+        aria-selected={i === 0 ? 'true' : 'false'}
+        data-testid={`test-design-tab-${stage.id}`}
+      >
+        <span class="td__tab-num mono" aria-hidden="true">
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        {stage.label}
+      </button>
+    ))}
+  </div>
+
+  <div class="td__stages" data-reveal>
+    <div class="td__stage panel" id="td-stage-requirement" data-tab-panel>
       <p class="td__step mono">01 · Requirement</p>
       <h3 class="td__title">The user story</h3>
       <blockquote class="td__story">{story}</blockquote>
@@ -28,9 +58,9 @@ const covered = coverage.filter((c) => c.tests.length > 0).length;
           </li>
         ))}
       </ul>
-    </li>
+    </div>
 
-    <li class="td__stage panel" data-reveal>
+    <div class="td__stage panel" id="td-stage-analysis" data-tab-panel>
       <p class="td__step mono">02 · Analysis</p>
       <h3 class="td__title">States, risks and techniques</h3>
       <h4 class="td__label">States</h4>
@@ -59,19 +89,16 @@ const covered = coverage.filter((c) => c.tests.length > 0).length;
           <li class="chip">{t}</li>
         ))}
       </ul>
-    </li>
+    </div>
 
-    <li class="td__stage panel" data-reveal>
+    <div class="td__stage panel" id="td-stage-cases" data-tab-panel>
       <p class="td__step mono">03 · Test cases</p>
       <h3 class="td__title">{testCases.length} prioritised test cases</h3>
       <p class="td__score">
         <span class="mono">{p1}</span> P1 · <span class="mono">{testCases.length - p1}</span> P2 ·
         each with its technique and the Playwright test that automates it
       </p>
-      <details class="td__more">
-        <summary data-testid="test-design-show-cases">
-          See all {testCases.length} test cases
-        </summary>
+      <div class="td__scroll">
         <table class="td__table">
           <caption class="sr-only">Test cases for the start sequence</caption>
           <thead>
@@ -111,10 +138,10 @@ const covered = coverage.filter((c) => c.tests.length > 0).length;
             ))}
           </tbody>
         </table>
-      </details>
-    </li>
+      </div>
+    </div>
 
-    <li class="td__stage panel" data-reveal>
+    <div class="td__stage panel" id="td-stage-coverage" data-tab-panel>
       <p class="td__step mono">04 · Coverage</p>
       <h3 class="td__title">Every criterion covered</h3>
       <p class="td__score">
@@ -154,14 +181,19 @@ const covered = coverage.filter((c) => c.tests.length > 0).length;
         The matrix exposed one gap: nothing tested a second press of START mid-sequence. TC-05 was
         added, along with its Playwright test, which now runs on every deploy.
       </p>
-    </li>
-  </ol>
+    </div>
+  </div>
   <p class="td__note">
     Demo: drafted by an AI agent from the requirement, then reviewed and edited by me, the way I’d
     run it on a real feature. The automated tests are this site’s own; their latest results are in
     the Telemetry panel above.
   </p>
 </div>
+
+<script>
+  import { initTabs } from '../scripts/tabs';
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach(initTabs);
+</script>
 
 <style>
   .td {
@@ -173,9 +205,68 @@ const covered = coverage.filter((c) => c.tests.length > 0).length;
   .td__stages {
     display: grid;
     gap: var(--space-4);
-    padding: 0;
-    margin: 0;
-    list-style: none;
+  }
+
+  /* The stage tabs: a four-step pipeline. Hidden until tabs.ts wires them up. */
+  .td__tabs {
+    display: none;
+  }
+
+  .td:global(.is-tabbed) .td__tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .td__tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 3rem;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-carbon-500);
+    border-bottom-width: 3px;
+    border-radius: var(--radius-sm);
+    background: rgb(13 17 22 / 88%);
+    color: var(--color-grey-200);
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition:
+      border-color var(--duration-fast),
+      color var(--duration-fast);
+  }
+
+  .td__tab:hover {
+    border-color: var(--color-grey-300);
+    color: var(--color-white);
+  }
+
+  .td__tab[aria-selected='true'] {
+    border-color: var(--color-carbon-500);
+    border-bottom-color: var(--color-red);
+    background: var(--color-surface-raised);
+    color: var(--color-white);
+  }
+
+  .td__tab-num {
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+  }
+
+  @container td (min-width: 36rem) {
+    .td:global(.is-tabbed) .td__tabs {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .td__stage[hidden] {
+    display: none;
+  }
+
+  /* The step label repeats the tab, so drop it when tabbed. */
+  .td:global(.is-tabbed) .td__step {
+    display: none;
   }
 
   .td__stage {
@@ -252,18 +343,8 @@ const covered = coverage.filter((c) => c.tests.length > 0).length;
     color: var(--color-white);
   }
 
-  .td__more > summary {
-    justify-self: start;
-    color: var(--color-accent);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    cursor: pointer;
-  }
-
-  .td__more[open] > summary {
-    margin-bottom: var(--space-3);
+  .td__scroll {
+    min-width: 0;
   }
 
   .td__table {

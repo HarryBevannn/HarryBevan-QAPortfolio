@@ -8,6 +8,7 @@ import type { Block } from '../data/lap';
 import TestRun from './TestRun.astro';
 import AiEvals from './AiEvals.astro';
 import TestDesign from './TestDesign.astro';
+import Workflow from './Workflow.astro';
 
 interface Props {
   block: Block;
@@ -131,6 +132,8 @@ const icons = {
 
 {block.type === 'test-design' && <TestDesign />}
 
+{block.type === 'workflow' && <Workflow />}
+
 {block.type === 'quotes' && (
   <div class="quotes">
     {block.items.map((q) => (
@@ -221,10 +224,19 @@ const icons = {
   }
 
   .case {
+    container: case / inline-size;
     display: grid;
     gap: var(--space-4);
     padding: var(--space-5);
     border-top: 3px solid var(--color-red);
+  }
+
+  /* A wide card reads across: problem, approach and outcome side by side. */
+  @container case (min-width: 44rem) {
+    .case__body {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-5);
+    }
   }
 
   .case__head {

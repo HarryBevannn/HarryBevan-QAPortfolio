@@ -109,8 +109,13 @@ export const CASES: Case[] = [
   {
     id: 'automation',
     category: 'grounded',
-    question: 'What does Harry’s Power Automate flow do?',
-    checks: [mentions('inbox', 'email'), mentions('task board', 'card')],
+    question: 'How does a change to this site get from a request to the live site?',
+    checks: [
+      mentions('plan'),
+      mentions('verif', 'second agent'),
+      // The push is the one step the workflow leaves to a person.
+      mentions('push'),
+    ],
   },
 
   // Unknown: not on the site, so it must say so instead of inventing.

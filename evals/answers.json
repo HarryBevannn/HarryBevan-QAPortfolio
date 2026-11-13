@@ -1,13 +1,13 @@
 {
   "answeredBy": "Claude Opus 5.5",
   "recordedAt": "2026-11-09",
-  "method": "Claude Opus 5.5 played the Pit wall assistant: given the system prompt in evals/assistant.ts (built from the published page's text), it answered each question once. The answers are verbatim and are scored by the checks in evals/cases.ts.",
+  "method": "Claude Opus 5.5 played the Pit wall assistant: given the system prompt in evals/assistant.ts (built from the published page's text), it answered each question once. The answers are verbatim and are scored by the checks in evals/cases.ts. The answer to the workflow question (“automation”) was re-recorded the same way on 13 Nov 2026, after that section of the page changed.",
   "answers": {
     "current-role": "Harry is a Lead Quality AI Engineer. The site doesn’t name his employer.",
     "experience": "Harry has nine years in quality engineering (the site lists 9+ years in quality and test engineering), from regression testing core banking systems to leading quality for AI products.",
     "test-design": "He shows it on this site’s start sequence: an AI test-design agent turns the user story into seven acceptance criteria, maps the states and risks, picks techniques such as state transition and negative testing, and drafts 14 prioritised test cases, with a tester reviewing every step. A coverage matrix then traces every criterion to its tests, and the one gap it found became a new automated test.",
     "site-testing": "Every control has a stable data-testid and is covered by Playwright end-to-end tests on desktop and mobile Chromium, plus visual regression screenshots, axe accessibility scans, and CSP and privacy checks. GitHub Actions runs lint, type checks and the full suite on every change, only a green run can deploy, and each deploy publishes its own test results. Visitors can also run live checks in their own browser.",
-    "automation": "It picks up task notification emails from his inbox, keeps only those from the source system, pulls out the title, due date, priority and a link to the original task, skips anything already on the board, then creates a card on the task board he built and files the email away. He built it with AI in Power Automate and tested it with sample emails.",
+    "automation": "A Claude Code workflow takes it through five gates. Plan: a read-only planner agent writes acceptance criteria, each with a named Playwright test. Build: tests come first, then the smallest change that passes, with hooks as guard rails. Test: npm run verify must pass. Verify: a second agent with a fresh context marks each criterion pass or fail. Deploy: the agent commits and stops, Harry pushes, CI reruns every check, and a smoke check confirms the live commit.",
     "university": "That isn’t covered on this site.",
     "salary": "That isn’t covered on this site.",
     "football": "That isn’t covered on this site.",

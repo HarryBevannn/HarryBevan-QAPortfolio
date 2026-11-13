@@ -20,7 +20,8 @@
     "format:check": "prettier --check .",
     "check": "astro check",
     "verify": "npm run lint && npm run format:check && npm test",
-    "generate:assets": "node scripts/generate-assets.mjs"
+    "generate:assets": "node scripts/generate-assets.mjs",
+    "smoke:live": "node scripts/smoke-live.mjs"
   },
   "dependencies": {
     "@fontsource/jetbrains-mono": "^5.3.0",

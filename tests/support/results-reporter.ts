@@ -13,7 +13,8 @@ import {
  * deployed site can show the results of the run that shipped it (the
  * Telemetry section). CI only deploys after this suite passes.
  *
- * Titles, outcomes and timings only: no error text, paths or attachments.
+ * Titles, outcomes and timings only (plus each skipped test's own stated
+ * reason): no error text, paths or attachments.
  * The one exception: visual tests (visual.spec.ts) get their screenshots,
  * which are of this public site, copied to dist/visual/ for the Telemetry
  * section's "Screenshots" dialog.
@@ -62,17 +63,27 @@ const STATUS: Record<ReturnType<TestCase['outcome']>, TestStatus> = {
   skipped: 'skipped',
 };
 
+/** The reason given to test.skip() / test.fixme(), if the spec wrote one. */
+function skipReason(test: TestCase): string | undefined {
+  const annotations = [...test.annotations, ...(test.results.at(-1)?.annotations ?? [])];
+  return annotations.find((a) => (a.type === 'skip' || a.type === 'fixme') && a.description)
+    ?.description;
+}
+
 export function toResult(test: TestCase): TestResult {
   // titlePath: ['', project, file, ...describe blocks, test title]
   const [, project = '', file = '', ...rest] = test.titlePath();
   const title = rest.pop() ?? test.title;
+  const status = STATUS[test.outcome()];
+  const reason = status === 'skipped' ? skipReason(test) : undefined;
   return {
     file: file.replaceAll('\\', '/'),
     suite: rest,
     title,
     project,
-    status: STATUS[test.outcome()],
+    status,
     durationMs: Math.round(test.results.at(-1)?.duration ?? 0),
+    ...(reason ? { skipReason: reason } : {}),
   };
 }
 

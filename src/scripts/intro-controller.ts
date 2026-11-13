@@ -98,9 +98,10 @@ export function initIntro(): void {
   /**
    * Under reduced motion every property gets a 0.01ms transition (global.css),
    * so the page is still "hidden" for an instant after the stage changes and
-   * focus can't land. Try now, then again once it has become visible.
+   * focus can't land. Try now, then each frame until it has become visible
+   * (three frames wasn't always enough on a busy machine; allow about half a second).
    */
-  function focusHero(tries = 3): void {
+  function focusHero(tries = 30): void {
     els.heroTitle.focus({ preventScroll: true });
     if (document.activeElement !== els.heroTitle && tries > 1) {
       requestAnimationFrame(() => focusHero(tries - 1));

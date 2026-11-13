@@ -263,6 +263,30 @@ export function initLap(reduced: boolean): LapControls | null {
 
   state.p = progressForScroll(window.scrollY);
   render(state.p);
+  // Content that changes height (tabs, loaded results) moves every section below
+  // it, so re-measure. A refresh cancels a smooth scroll in flight, so wait until
+  // the page has been still for a moment.
+  const lapEl = $<HTMLElement>('[data-lap]');
+  if (lapEl && 'ResizeObserver' in window) {
+    let height = lapEl.offsetHeight;
+    let stale = false;
+    let settle: number | undefined;
+    const whenStill = () => {
+      if (!stale) return;
+      window.clearTimeout(settle);
+      settle = window.setTimeout(() => {
+        stale = false;
+        ScrollTrigger.refresh();
+      }, 400);
+    };
+    new ResizeObserver(() => {
+      if (lapEl.offsetHeight === height) return;
+      height = lapEl.offsetHeight;
+      stale = true;
+      whenStill();
+    }).observe(lapEl);
+    window.addEventListener('scroll', whenStill, { passive: true });
+  }
   // Web fonts can shift section positions slightly once loaded (and the road's boards use them).
   void document.fonts?.ready.then(() => {
     ScrollTrigger.refresh();

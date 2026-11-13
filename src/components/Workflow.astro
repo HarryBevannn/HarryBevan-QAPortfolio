@@ -1,0 +1,265 @@
+---
+/**
+ * Workflow: the /ship pipeline (plan, build, test, verify, deploy) that takes
+ * a change to this site from a request to the live site with Claude Code.
+ * Data in src/data/workflow.ts; every file named here is in the repo, under
+ * .claude/ and scripts/, and each stage links to it.
+ *
+ * Plain semantic HTML: an ordered list of stages and a list of guard rails.
+ * A wide panel lays each stage out as a row (who, what, gate).
+ */
+import { command, guards, stages } from '../data/workflow';
+import { site } from '../data/site';
+
+const fileUrl = (file: string) => `${site.links.repo}/blob/main/${file}`;
+---
+
+<div class="wf panel" data-reveal data-workflow>
+  <div class="wf__head">
+    <p class="wf__kicker mono">AI workflow · Claude Code</p>
+    <h3 class="wf__title">One command, five gates, one human decision</h3>
+    <p class="wf__cmd mono">
+      <span class="wf__prompt" aria-hidden="true">
+        &gt;
+      </span>
+      {command} <span class="wf__arg">make the lap timer pause when the tab is hidden</span>
+    </p>
+  </div>
+
+  <ol class="wf__stages">
+    {stages.map((s, i) => (
+      <li class="wf__stage" data-stage-id={s.id}>
+        <div class="wf__name">
+          <span class="wf__num mono" aria-hidden="true">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <div>
+            <h4 class="wf__stage-title">{s.name}</h4>
+            <p class="wf__who">{s.who}</p>
+          </div>
+        </div>
+        <p class="wf__does">{s.does}</p>
+        <div class="wf__exit">
+          <p class="wf__gate">
+            <span class="wf__gate-label mono">Gate</span>
+            {s.gate}
+          </p>
+          <a
+            class="wf__file mono"
+            href={fileUrl(s.file)}
+            data-testid={`workflow-file-${s.id}`}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {s.file}
+            <span class="sr-only"> (opens in a new tab)</span>
+            <span aria-hidden="true"> ↗</span>
+          </a>
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  <div class="wf__guards">
+    <h4 class="wf__label mono">What the agent can’t do, whatever it’s asked</h4>
+    <ul>
+      {guards.map((g) => (
+        <li data-guard={g.id}>{g.text}</li>
+      ))}
+    </ul>
+  </div>
+
+  <p class="wf__note">
+    Hands-free, not eyes-off: the agents do the work between the gates, the hooks hold the lines
+    that mustn’t move, and the one irreversible step stays with a person. The skill, agents and
+    hooks are in this site’s repo, and the guard rails have their own tests in the suite above.
+  </p>
+</div>
+
+<style>
+  .wf {
+    container: wf / inline-size;
+    display: grid;
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border-top: 3px solid var(--color-red);
+  }
+
+  .wf__head {
+    display: grid;
+    gap: var(--space-2);
+  }
+
+  .wf__kicker {
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-red-bright);
+  }
+
+  .wf__title {
+    font-size: var(--text-xl);
+  }
+
+  /* The command, as typed. */
+  .wf__cmd {
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--color-carbon-500);
+    border-radius: var(--radius-sm);
+    background: rgb(5 7 9 / 90%);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--color-green);
+    overflow-wrap: anywhere;
+  }
+
+  .wf__prompt {
+    margin-right: var(--space-2);
+    color: var(--color-text-muted);
+  }
+
+  .wf__arg {
+    font-weight: 400;
+    color: var(--color-grey-200);
+  }
+
+  .wf__stages {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .wf__stage {
+    display: grid;
+    gap: var(--space-2);
+    padding-block: var(--space-4);
+    border-top: 1px solid var(--color-carbon-500);
+  }
+
+  .wf__name {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .wf__num {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 1px solid var(--color-accent);
+    border-radius: 50%;
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+  }
+
+  .wf__stage-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    line-height: var(--leading-tight);
+  }
+
+  .wf__who {
+    font-size: var(--text-xs);
+    color: var(--color-grey-200);
+  }
+
+  .wf__does {
+    color: var(--color-text-muted);
+  }
+
+  .wf__exit {
+    display: grid;
+    gap: var(--space-1);
+    align-content: start;
+    font-size: var(--text-sm);
+  }
+
+  .wf__gate {
+    color: var(--color-white);
+  }
+
+  .wf__gate-label {
+    margin-right: var(--space-2);
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-sm);
+    background: rgb(61 220 132 / 14%);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-green);
+  }
+
+  .wf__file {
+    justify-self: start;
+    padding-block: var(--space-1);
+    font-size: var(--text-xs);
+    overflow-wrap: anywhere;
+  }
+
+  .wf__guards {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border-left: 3px solid var(--color-amber);
+    background: rgb(255 176 0 / 6%);
+  }
+
+  .wf__label {
+    margin: 0;
+    font-size: var(--text-xs);
+    font-weight: 400;
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+    color: var(--color-grey-200);
+  }
+
+  .wf__guards ul {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+  }
+
+  .wf__guards li {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .wf__guards li::before {
+    content: '✕';
+    position: absolute;
+    left: 0;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--color-amber);
+  }
+
+  .wf__note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  /* A wide panel: each stage is one row, and the guard rails sit two across. */
+  @container wf (min-width: 44rem) {
+    .wf__stage {
+      grid-template-columns: 11.5rem minmax(0, 1fr) 15rem;
+      gap: var(--space-5);
+      align-items: start;
+    }
+
+    .wf__name {
+      align-items: flex-start;
+    }
+
+    .wf__guards ul {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2) var(--space-5);
+    }
+  }
+</style>

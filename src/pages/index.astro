@@ -176,4 +176,15 @@ const year = new Date().getFullYear();
       grid-column: 1;
     }
   }
+
+  /*
+   * Wide desktop: the text column grows with the screen (it was a fixed 40rem,
+   * a third of a 1920px display) and the car moves right to make room
+   * (--driver-cx in DriverView). The hero keeps its own narrower measure.
+   */
+  @media (min-width: 1400px) {
+    .lap {
+      grid-template-columns: minmax(0, 46vw) minmax(0, 1fr);
+    }
+  }
 </style>

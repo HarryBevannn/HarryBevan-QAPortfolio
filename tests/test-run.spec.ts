@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { TestResultsSummary } from '../src/lib/testResults';
+import { skipSummary, type TestResultsSummary } from '../src/lib/testResults';
+import type { TestCase } from '@playwright/test/reporter';
 import { expectStage, skipIntro } from './helpers';
+import { toResult } from './support/results-reporter';
 
 /** A small, known run, so the Telemetry UI can be checked exactly. */
 const fixture: TestResultsSummary = {
@@ -27,6 +29,7 @@ const fixture: TestResultsSummary = {
       project: 'mobile-chromium',
       status: 'skipped',
       durationMs: 0,
+      skipReason: 'The sector nav is desktop-only; mobile uses the mini-map.',
     },
     {
       file: 'accessibility.spec.ts',
@@ -105,6 +108,10 @@ test.describe('Telemetry: live test results', () => {
     await expect(skipped).toHaveAttribute('aria-pressed', 'true');
     await expect(output.locator('[data-status]')).toHaveCount(1);
     await expect(output.locator('[data-status="skipped"]')).toContainText('desktop sector nav');
+    // Each skipped test carries the reason written in its spec.
+    await expect(output.locator('[data-status="skipped"]')).toContainText(
+      'skipped: The sector nav is desktop-only; mobile uses the mini-map.',
+    );
     await expect(output).toBeFocused();
     await expect(page.locator('[data-announcer]')).toContainText('Showing 1 skipped test.');
 
@@ -142,6 +149,73 @@ test.describe('Telemetry: live test results', () => {
     await failed.click();
     await expect(page.getByTestId('test-console').locator('[data-status]')).toHaveCount(1);
     await expect(page.getByTestId('test-console')).toContainText('a broken test');
+  });
+
+  test('a line under the totals says why tests were skipped', async ({ page }) => {
+    // The fixture's skipped test never ran on any project: that is flagged, not excused.
+    let run = fixture;
+    await page.route('**/test-results.json', (route) => route.fulfill({ json: run }));
+    await driveToTelemetry(page);
+    const note = page.getByTestId('test-run-skip-note');
+    await expect(note).toHaveText('1 of 1 skipped test did not run on any viewport.');
+    await expect(note).toHaveAttribute('data-kind', 'warn');
+
+    // Once the same test has passed on the other project, the skip is by design.
+    const skipped = fixture.tests.find((t) => t.status === 'skipped')!;
+    run = {
+      ...fixture,
+      tests: [
+        ...fixture.tests,
+        { ...skipped, project: 'desktop-chromium', status: 'passed', durationMs: 900 },
+      ],
+    };
+    await page.reload();
+    await expectStage(page, 'track');
+    await page.locator('#telemetry').scrollIntoViewIfNeeded();
+    await expect(note).toContainText('The 1 skip is by design');
+    await expect(note).toHaveAttribute('data-kind', 'ok');
+
+    // No skips, no line.
+    run = { ...fixture, tests: fixture.tests.filter((t) => t.status !== 'skipped') };
+    await page.reload();
+    await expectStage(page, 'track');
+    await page.locator('#telemetry').scrollIntoViewIfNeeded();
+    await expect(page.locator('[data-total="skipped"]')).toHaveText('0');
+    await expect(note).toBeHidden();
+  });
+
+  test('skips only count as by design when the test passed on another project', () => {
+    const base = fixture.tests[0]!;
+    const skip = { ...base, project: 'mobile-chromium', status: 'skipped' as const };
+    expect(skipSummary([base])).toBeNull();
+    expect(skipSummary([base, skip])?.byDesign).toBe(true);
+    // A twin that failed, or a different test, proves nothing.
+    expect(skipSummary([{ ...base, status: 'failed' }, skip])?.byDesign).toBe(false);
+    expect(skipSummary([{ ...base, title: 'another test' }, skip])?.byDesign).toBe(false);
+    const two = skipSummary([base, skip, { ...skip, title: 'never run' }]);
+    expect(two).toEqual({
+      text: '1 of 2 skipped tests did not run on any viewport.',
+      byDesign: false,
+    });
+  });
+
+  test('the reporter publishes a skipped test’s own reason, and nothing for other outcomes', () => {
+    const fake = (outcome: string, annotations: { type: string; description?: string }[]) =>
+      ({
+        title: 't',
+        titlePath: () => ['', 'mobile-chromium', 'a.spec.ts', 'Suite', 't'],
+        outcome: () => outcome,
+        annotations,
+        results: [{ duration: 12, annotations: [] }],
+      }) as unknown as TestCase;
+    const why = { type: 'skip', description: 'Pure logic: runs once, on desktop.' };
+    expect(toResult(fake('skipped', [why]))).toMatchObject({
+      status: 'skipped',
+      skipReason: 'Pure logic: runs once, on desktop.',
+    });
+    expect(toResult(fake('skipped', [{ type: 'skip' }]))).not.toHaveProperty('skipReason');
+    // Only a skip's reason is published: never an annotation from a test that ran.
+    expect(toResult(fake('expected', [why]))).not.toHaveProperty('skipReason');
   });
 
   test('viewing tests scrolls the whole results box into view', async ({ page }) => {

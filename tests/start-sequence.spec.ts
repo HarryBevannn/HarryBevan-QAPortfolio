@@ -11,6 +11,7 @@ import {
   trackErrors,
 } from './helpers';
 import { criteria, testCases } from '../src/data/testDesign';
+import { guards, stages } from '../src/data/workflow';
 
 test.describe('Start sequence', () => {
   test('page loads with no console errors, through the whole sequence', async ({ page }) => {
@@ -329,7 +330,7 @@ test.describe('Lap extras', () => {
     await expectStage(page, 'track');
   });
 
-  test('the lap runs intro, the site testing itself, test design, automation, contact', async ({
+  test('the lap runs intro, the site testing itself, test design, the AI workflow, contact', async ({
     page,
   }) => {
     const ids = await page
@@ -352,10 +353,63 @@ test.describe('Lap extras', () => {
 
   test('the test design demo traces every criterion to its test cases', async ({ page }) => {
     const section = page.locator('#test-design');
+    await section.scrollIntoViewIfNeeded();
+    await page.getByTestId('test-design-tab-cases').click();
     await expect(section.locator('[data-test-case]')).toHaveCount(testCases.length);
+    await expect(section.locator('[data-test-case]').first()).toBeVisible();
+    await page.getByTestId('test-design-tab-coverage').click();
     for (const ac of criteria) {
       await expect(section.locator(`[data-coverage="${ac.id}"] td`)).toHaveText(/TC-\d+/);
+      await expect(section.locator(`[data-coverage="${ac.id}"]`)).toBeVisible();
     }
+  });
+
+  test('the test design stages are tabs: one on screen, switched by click or arrow keys', async ({
+    page,
+  }) => {
+    const section = page.locator('#test-design');
+    await section.scrollIntoViewIfNeeded();
+    const tab = (id: string) => page.getByTestId(`test-design-tab-${id}`);
+    const panel = (id: string) => section.locator(`#td-stage-${id}`);
+
+    await expect(section.getByRole('tablist', { name: 'Test design stages' })).toBeVisible();
+    await expect(tab('requirement')).toHaveAttribute('aria-selected', 'true');
+    await expect(panel('requirement')).toBeVisible();
+    await expect(section.getByRole('tabpanel')).toHaveCount(1);
+    await expect(section.getByRole('tabpanel')).toHaveAccessibleName(/Requirement/);
+
+    await tab('analysis').click();
+    await expect(tab('analysis')).toHaveAttribute('aria-selected', 'true');
+    await expect(tab('requirement')).toHaveAttribute('aria-selected', 'false');
+    await expect(panel('analysis')).toBeVisible();
+    await expect(panel('requirement')).toBeHidden();
+
+    // Arrow keys move along the tabs (and wrap); only the selected tab is in the tab order.
+    await page.keyboard.press('ArrowRight');
+    await expect(tab('cases')).toBeFocused();
+    await expect(panel('cases')).toBeVisible();
+    await page.keyboard.press('End');
+    await expect(tab('coverage')).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(tab('requirement')).toBeFocused();
+    await expect(tab('requirement')).toHaveAttribute('tabindex', '0');
+    await expect(tab('coverage')).toHaveAttribute('tabindex', '-1');
+    await expect(section.getByRole('tabpanel')).toHaveCount(1);
+  });
+
+  test('the AI workflow shows five gated stages, each linked to its file in the repo', async ({
+    page,
+  }) => {
+    const section = page.locator('#automation');
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.locator('[data-stage-id]')).toHaveCount(stages.length);
+    await expect(section.locator('[data-stage-id] h4')).toHaveText(stages.map((s) => s.name));
+    for (const s of stages) {
+      const link = page.getByTestId(`workflow-file-${s.id}`);
+      await expect(link).toHaveAttribute('href', new RegExp(`/blob/main/${s.file}$`));
+      await expect(link).toHaveAccessibleName(`${s.file} (opens in a new tab)`);
+    }
+    await expect(section.locator('[data-guard]')).toHaveCount(guards.length);
   });
 
   test('the HUD follows the lap and the finish shows a lap time', async ({ page }) => {
@@ -369,7 +423,7 @@ test.describe('Lap extras', () => {
     page,
   }) => {
     const marker = page.getByTestId('track-marker-automation');
-    await expect(marker).toHaveAccessibleName('Section 04: Admin that files itself');
+    await expect(marker).toHaveAccessibleName('Section 04: Plan to deploy, hands-free');
     await marker.click();
     await expect(page).toHaveURL(/#automation$/);
     await expect(page.locator('#automation')).toHaveClass(/is-active/);

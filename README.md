@@ -60,6 +60,7 @@ npm run dev          # http://localhost:4321
 | `npm run format`          | Prettier, writing changes                                        |
 | `npm run verify`          | Everything CI runs: lint, format check, then build + tests       |
 | `npm run generate:assets` | Regenerate `public/og.png` and `apple-touch-icon.png`            |
+| `npm run smoke:live`      | After a push: wait until the live site serves that commit, green |
 
 First time running tests? Install the browser: `npx playwright install chromium`.
 Set `SKIP_BUILD=1` to rerun tests against an existing `dist/` without rebuilding.
@@ -77,6 +78,8 @@ src/
 ├─ data/
 │  ├─ metrics.ts        ← the hero's headline numbers
 │  ├─ lap.ts            ← which content goes on which part of the lap
+│  ├─ testDesign.ts     ← the test-design demo
+│  ├─ workflow.ts       ← the /ship workflow's stages and guard rails, as shown on the page
 │  ├─ track.ts          ← circuit waypoints and corner names ("Turn 1"...)
 │  └─ site.ts           ← name, role, links, SEO text
 ├─ animations/
@@ -99,8 +102,9 @@ src/
 ├─ lib/geometry.ts      ← turns waypoints into a smooth SVG path
 ├─ layouts/BaseLayout.astro  ← <head>: meta, Open Graph, fonts
 └─ pages/index.astro, 404.astro
+.claude/                ← the /ship workflow: skills/ship, agents/, hooks/, settings.json
 tests/                  ← Playwright + axe
-scripts/generate-assets.mjs
+scripts/generate-assets.mjs, smoke-live.mjs
 .github/workflows/ci.yml
 ```
 
@@ -113,21 +117,32 @@ Everything visitors read lives in **`src/data/lap.ts`**. Each section has:
   scrolls into view (names are defined in `src/data/track.ts`; `'finish'`
   means a full lap)
 - `sector`: the label shown on the section and in the mobile mini-map
-- `title`, `intro` and `blocks`: content blocks (`cases`, `test-run`, `chips`, `quotes`,
-  `finish`, `links`, `text`), rendered by
+- `title`, `intro` and `blocks`: content blocks (`cases`, `test-run`, `ai-evals`,
+  `test-design`, `workflow`, `chips`, `quotes`, `finish`, `links`, `text`), rendered by
   `LapBlock.astro`
 
 The lap runs: start (hero) → **A portfolio that tests itself** (the case study, with the
 live test results, Break it and the AI evals scorecard under it) → **From requirement to
 test cases** (a test-design demo on this site's start sequence, data in
-`src/data/testDesign.ts`) → **Admin that files itself** (a Power Automate flow built with
-AI) → **Let's talk quality** (LinkedIn only) → the lap from above. The case studies are this
+`src/data/testDesign.ts`, its four stages shown as tabs) → **Plan to deploy, hands-free**
+(the Claude Code workflow that ships each change, data in `src/data/workflow.ts`) →
+**Let's talk quality** (LinkedIn only) → the lap from above. The case studies are this
 site and demos built on it, deliberately not tied to any employer or client.
 
 Sections are driven in order, so reordering the array reorders the lap.
 To rename corners, edit `corners` in `src/data/track.ts`. To reshape the
 circuit, move the `waypoints` there: dense points make tight corners and
 sparse points make straights.
+
+### Layout
+
+On a phone the text scrolls under the windscreen band. On desktop the text sits in a column
+on the left with the road beside it. From 1400px wide the column grows with the screen (46%
+of it, up to 60rem; it used to stop at 40rem, a third of a 1920px display) and the car moves
+right to make room (`--driver-cx` in `DriverView.astro`). Panels use container queries, so a
+wide column lays things out across (case study in three columns, tables as tables, workflow
+stages as rows) and a narrow one stacks them. Tabs or loaded results change the page's
+height, so `lap.ts` re-measures once scrolling stops.
 
 ### Portfolio, not a CV
 
@@ -205,14 +220,16 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
   `hero-scroll-cue`, `hero-contact`, `sector-link-<section>`, `track-marker-<section>`,
   `case-link-<label>`, `test-run-replay`, `test-run-live`, `test-run-break`,
   `test-run-view-<outcome>`, `test-shots-<project>-<test>`, `test-shots-close`, `test-run-ci`,
-  `test-results-json`, `contact-<label>`, `back-to-start`. `tests/test-run.spec.ts` fails if any control on `/` or the
+  `test-results-json`, `test-design-tab-<stage>`, `workflow-file-<stage>`, `contact-<label>`,
+  `back-to-start`. `tests/test-run.spec.ts` fails if any control on `/` or the
   404 page is missing one, or if two share an id. Tests locate controls by test id
   (`tests/helpers.ts`), and `accessibility.spec.ts` separately asserts their accessible
   names, so a11y is still covered.
 - **Live results on the site.** `tests/support/results-reporter.ts` is a custom
   Playwright reporter that writes `dist/test-results.json` (titles, outcomes and
-  timings only: no error text, paths or attachments, except visual tests' screenshots of
-  the site itself, copied to `dist/visual/`). In CI that file is written after
+  timings only, plus the reason each skipped test gives in its `test.skip()`: no error text,
+  paths or attachments, except visual tests' screenshots of the site itself, copied to
+  `dist/visual/`). In CI that file is written after
   the build and before `dist/` is uploaded, so each deploy carries the results of the
   run that shipped it. CI only deploys a passing run.
 - The **Telemetry** section (`src/components/TestRun.astro`, `src/scripts/testRun.ts`)
@@ -220,7 +237,12 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
   **replay the run** line by line. **View tests** under Passed, Failed and Skipped lists
   every test with that outcome straight away and scrolls the list into view (Passed
   includes flaky tests, which passed on a retry; Failed and Skipped only have the link
-  when the run has such tests). Playwright can't run inside a web page, so **Run live
+  when the run has such tests). **Skips are explained**: a line under the totals says why
+  tests were skipped (`skipSummary` in `src/lib/testResults.ts`). A skip counts as "by
+  design" only if the same test passed on the other project (logic-only tests run once, on
+  desktop; two layout tests run on one viewport each); otherwise the line turns amber and
+  says how many never ran. Each skipped test in the list shows its own reason. Playwright
+  can't run inside a web page, so **Run live
   checks** (`src/scripts/liveChecks.ts`) runs ten real assertions in the visitor's
   browser instead: test ids present and unique, accessible names, focus order, heading
   levels, CSP, no personal contact details, safe external links, sound-toggle state and
@@ -265,8 +287,49 @@ self-hosted via `@fontsource` and imported in `BaseLayout.astro`.
     `evals/answers.json`, then `npm run evals`.
   - Published answers are redacted: anything shaped like an email address, phone number
     or postcode is replaced, and answers are shown as text, never HTML.
+- **The `/ship` workflow has tests too** (`tests/workflow.spec.ts`): every file the page
+  names exists, the skill runs the five stages the page lists, each guard rail on the page
+  is one the hook really blocks (and ordinary work is left alone), and the smoke check only
+  passes for the right commit on a green run.
 - `npm run build` on its own produces no results file; the section then says so.
   Run `npm test` and `npm run preview` to see it locally.
+
+## The `/ship` workflow (Claude Code)
+
+Changes to this site can be shipped with one command in Claude Code:
+
+```
+/ship make the lap timer pause when the tab is hidden
+```
+
+It runs five stages, each with a gate that must be met before the next starts:
+
+| Stage  | Who                         | Gate                                  | Defined in                     |
+| ------ | --------------------------- | ------------------------------------- | ------------------------------ |
+| Plan   | `planner` agent (read-only) | every acceptance criterion has a test | `.claude/agents/planner.md`    |
+| Build  | Claude Code, inside hooks   | only the planned files changed        | `.claude/hooks/guard.mjs`      |
+| Test   | ESLint, Playwright, axe     | `npm run verify` passes               | `.claude/skills/ship/SKILL.md` |
+| Verify | `verifier` agent (fresh)    | PASS on every criterion               | `.claude/agents/verifier.md`   |
+| Deploy | Harry, then GitHub Actions  | the live site reports the new commit  | `scripts/smoke-live.mjs`       |
+
+- **The agent that builds never signs off its own work.** The verifier starts with no
+  memory of the build, reads the diff, runs `npm run verify` itself and marks each criterion.
+  It has no edit tools, so it can only report.
+- **Hooks hold the lines that mustn't move** (`.claude/settings.json`). Before every shell
+  command and file edit, `guard.mjs` blocks: pushing or merging (a push to `main` deploys),
+  `--no-verify`, `git reset --hard` / `git clean -f`, raw `--update-snapshots`, `.only` or a
+  reasonless `.skip()` in `tests/`, an email address or phone number outside `tests/` and
+  `evals/`, and inline `style="..."` in `src/`. After every edit, `format.mjs` runs Prettier
+  on the file. The hooks apply to every Claude Code session in this repo, not just `/ship`.
+- **Deploying stays a human decision.** The workflow commits on a `ship/<name>` branch and
+  stops, printing the merge and push commands. After the push, CI re-runs everything and
+  deploys a green run; `npm run smoke:live` then polls the live site's
+  `/test-results.json` until it reports that commit with a passing run.
+- `permissions` in the settings pre-approve the safe commands (`npm run *`, tests,
+  `git status/diff/add/commit`), which is what makes it hands-free, and deny `git push`.
+
+To change a rule, edit `guard.mjs` and its examples in `tests/workflow.spec.ts` together; the
+page's list of guard rails is `guards` in `src/data/workflow.ts`.
 
 ## Performance
 
@@ -415,7 +478,8 @@ Leave this until the site is finished. Until then, it lives at the free
 
 ## TODO
 
-- [ ] Check the Power Automate flow's details in `src/data/lap.ts` (the `TODO` there)
+- [ ] Read the "Plan to deploy, hands-free" copy in `src/data/lap.ts` and
+      `src/data/workflow.ts` (the `TODO` there), and run `/ship` on a small change end to end
 - [ ] Run Lighthouse in CI and feed its scores into the Telemetry section (the Playwright
       results are already live; the Lighthouse readings are hand-updated in `lap.ts`)
 - [ ] Collect testimonials (add a `quotes` block in `lap.ts`)

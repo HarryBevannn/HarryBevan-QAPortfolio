@@ -1,6 +1,6 @@
 ---
 /**
- * LapSection: one CV section, tied to a point on the lap.
+ * LapSection: one portfolio section, tied to a point on the lap.
  * Content comes from src/data/lap.ts; blocks render via LapBlock.astro.
  * Plain semantic HTML, so it reads well with or without JavaScript.
  */
@@ -419,6 +419,17 @@ const heroAttr = section.hero ? { 'data-hero-role': '' } : {};
 
     .lap-section--hero {
       min-height: 100vh;
+    }
+  }
+
+  /* Wide desktop: sections use the wider column (see index.astro); prose keeps a readable measure. */
+  @media (min-width: 1400px) {
+    .lap-section:not(.lap-section--hero) {
+      max-width: 60rem;
+    }
+
+    .lap-section__intro:not(.hero__intro) {
+      max-width: 46rem;
     }
   }
 </style>

@@ -10,7 +10,8 @@
  *   - "View tests" under Passed, Failed and Skipped lists every test with
  *     that outcome in the console, straight away (no replay), and scrolls the
  *     console into view. Failed and Skipped only offer the link if the run
- *     has such tests. Visual tests get a "Screenshots" button that opens
+ *     has such tests, and each skipped test shows the reason from its spec.
+ *     A line under the totals says why tests were skipped. Visual tests get a "Screenshots" button that opens
  *     their images in a dialog.
  *   - "Break it" knocks the front-left wheel off (src/animations/crash.ts)
  *     and plants real bugs (./breakIt.ts) for the live checks to catch;
@@ -22,6 +23,7 @@
  */
 import {
   formatDuration,
+  skipSummary,
   totalsOf,
   type TestResult,
   type TestResultsSummary,
@@ -69,6 +71,7 @@ export function initTestRun(root: HTMLElement): void {
     scroll: q('[data-test-run-scroll]'),
     ciLink: q<HTMLAnchorElement>('[data-test-run-ci]'),
     ciLabel: q('[data-ci-label]'),
+    skipNote: q('[data-test-run-skip-note]'),
   };
   const total = (key: string) => q(`[data-total="${key}"]`);
   const views = [...root.querySelectorAll<HTMLButtonElement>('[data-test-run-view]')];
@@ -178,7 +181,11 @@ export function initTestRun(root: HTMLElement): void {
   const toLine = (t: TestResult): Line => ({
     status: t.status,
     text: [...t.suite, t.title].join(' › '),
-    meta: `${t.project} · ${t.file} · ${t.status === 'skipped' ? 'skipped' : formatDuration(t.durationMs)}`,
+    meta: `${t.project} · ${t.file} · ${
+      t.status === 'skipped'
+        ? `skipped${t.skipReason ? `: ${t.skipReason}` : ''}`
+        : formatDuration(t.durationMs)
+    }`,
     ...(t.shots ? { shots: { shots: t.shots, title: t.title, project: t.project } } : {}),
   });
 
@@ -385,6 +392,13 @@ export function initTestRun(root: HTMLElement): void {
     if (r.ci && ui.ciLink) {
       ui.ciLink.href = r.ci.runUrl;
       if (ui.ciLabel) ui.ciLabel.textContent = 'This run on GitHub Actions';
+    }
+    // Why anything was skipped, in a line under the totals.
+    const skips = skipSummary(r.tests);
+    if (ui.skipNote) {
+      ui.skipNote.textContent = skips?.text ?? '';
+      ui.skipNote.hidden = !skips;
+      ui.skipNote.dataset.kind = skips?.byDesign ? 'ok' : 'warn';
     }
     if (ui.replay) ui.replay.disabled = false;
     enableViews(true);

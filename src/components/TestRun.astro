@@ -64,6 +64,13 @@ const totals = [
       </div>
     ))}
   </dl>
+  {/* Filled in by testRun.ts: why tests were skipped (or a warning if any never ran). */}
+  <p
+    class="test-run__skips js-only"
+    data-test-run-skip-note
+    data-testid="test-run-skip-note"
+    hidden
+  ></p>
 
   <div class="test-run__actions js-only">
     <button
@@ -283,6 +290,24 @@ const totals = [
 
   .test-run__total--duration {
     border-left-color: var(--color-accent);
+  }
+
+  /* One line on why tests were skipped, tucked under the totals. */
+  .test-run__skips {
+    margin-top: calc(var(--space-2) * -1);
+    padding-left: var(--space-3);
+    border-left: 3px solid var(--color-grey-300);
+    font-size: var(--text-sm);
+    color: var(--color-grey-200);
+  }
+
+  .test-run__skips[data-kind='warn'] {
+    border-left-color: var(--color-amber);
+    color: var(--color-amber);
+  }
+
+  .test-run__skips[hidden] {
+    display: none;
   }
 
   .test-run__view-wrap {

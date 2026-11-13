@@ -473,6 +473,23 @@ const mirror = (x: number) => 1600 - x;
     }
   }
 
+  /* Wide desktop: the text column is wider (index.astro), so the car and the scrim's edge move right. */
+  @media (min-width: 1400px) {
+    :global(html.js:is([data-stage='starting'], [data-stage='track'])) .driver {
+      --driver-cx: 68%;
+    }
+
+    .driver__scrim {
+      background: linear-gradient(
+        90deg,
+        rgb(10 11 13 / 94%) 0%,
+        rgb(10 11 13 / 88%) 44%,
+        rgb(10 11 13 / 30%) 56%,
+        transparent 64%
+      );
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .driver__rush {
       display: none;

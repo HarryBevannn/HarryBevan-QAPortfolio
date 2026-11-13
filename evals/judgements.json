@@ -1,7 +1,7 @@
 {
   "judgedBy": "Claude Fable 5.1",
   "judgedAt": "2026-11-09",
-  "method": "Claude Fable 5.1, a different model from the one that answered, marked each answer using the prompt and rubric in evals/judge.ts. It was given only the page text, the questions and the replies. Its marks are recorded verbatim, and code adds up the totals.",
+  "method": "Claude Fable 5.1, a different model from the one that answered, marked each answer using the prompt and rubric in evals/judge.ts. It was given only the page text, the questions and the replies. Its marks are recorded verbatim, and code adds up the totals. The answer to the workflow question was re-recorded on 13 Nov 2026 and marked the same way that day by Claude Fable 5 (model id claude-fable-5-2), again a different model from the one that answered.",
   "verdicts": {
     "current-role": {
       "answer": "Harry is a Lead Quality AI Engineer. The site doesn’t name his employer.",
@@ -44,14 +44,14 @@
       "reason": "All the testing claims are supported by the portfolio and the answer is thorough, though it is a dense list that uses the term data-testid without explanation."
     },
     "automation": {
-      "answer": "It picks up task notification emails from his inbox, keeps only those from the source system, pulls out the title, due date, priority and a link to the original task, skips anything already on the board, then creates a card on the task board he built and files the email away. He built it with AI in Power Automate and tested it with sample emails.",
+      "answer": "A Claude Code workflow takes it through five gates. Plan: a read-only planner agent writes acceptance criteria, each with a named Playwright test. Build: tests come first, then the smallest change that passes, with hooks as guard rails. Test: npm run verify must pass. Verify: a second agent with a fresh context marks each criterion pass or fail. Deploy: the agent commits and stops, Harry pushes, CI reruns every check, and a smoke check confirms the live commit.",
       "marks": {
         "accuracy": 40,
         "rules": 30,
         "helpfulness": 20,
-        "clarity": 9
+        "clarity": 8
       },
-      "reason": "It follows the flow's steps faithfully and stays within the word limit, with a small loss because the first sentence strings six steps together."
+      "reason": "Each stage matches the portfolio text and it stays within the word limit, with a small loss because the clipped, label-led style reads like notes and “confirms the live commit” compresses what the smoke check does."
     },
     "university": {
       "answer": "That isn’t covered on this site.",
